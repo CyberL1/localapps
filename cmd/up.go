@@ -79,7 +79,7 @@ var upCmd = &cobra.Command{
 				httputil.NewSingleHostReverseProxy(appUrl).ServeHTTP(w, r)
 
 				go func() {
-					time.Sleep(3 * time.Second)
+					time.Sleep(30 * time.Second)
 					cmd.Process.Kill()
 				}()
 
