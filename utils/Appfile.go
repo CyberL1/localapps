@@ -33,3 +33,7 @@ func GetApp(appName string) (*types.App, error) {
 
 	return &app, nil
 }
+
+func GetAppDirectory(appName string) string {
+	return filepath.Join(constants.LocalappsDir, appName)
+}
