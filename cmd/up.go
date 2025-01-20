@@ -48,8 +48,10 @@ var upCmd = &cobra.Command{
 				for _, part := range app.Parts {
 					if strings.Split(r.URL.Path, "/")[1] == part.Path {
 						currentPart = part
-						break
+					} else if part.Path == "" {
+						currentPart = part
 					}
+					break
 				}
 
 				freePort, _ := GetFreePort()
