@@ -45,13 +45,18 @@ var upCmd = &cobra.Command{
 				}
 
 				var currentPart types.Part
+				var fallbackPart types.Part
 				for _, part := range app.Parts {
+					if part.Path == "" {
+						fallbackPart = part
+					}
+
 					if strings.Split(r.URL.Path, "/")[1] == part.Path {
 						currentPart = part
-					} else if part.Path == "" {
-						currentPart = part
+						break
+					} else {
+						currentPart = fallbackPart
 					}
-					break
 				}
 
 				freePort, _ := GetFreePort()
