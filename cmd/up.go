@@ -68,8 +68,8 @@ var upCmd = &cobra.Command{
 
 				// Wait for the app to be ready
 				for {
-					resp, err := http.Get(fmt.Sprintf("http://localhost:%s", strconv.Itoa(freePort)))
-					if err == nil && resp.StatusCode == http.StatusOK {
+					_, err := http.Get(fmt.Sprintf("http://localhost:%s", strconv.Itoa(freePort)))
+					if err == nil {
 						break
 					}
 					time.Sleep(500 * time.Millisecond)
