@@ -2,7 +2,7 @@ package types
 
 type App struct {
 	Name  string `yaml:"name"`
-	Parts Part   `yaml:"parts"`
+	Parts []Part   `yaml:"parts"`
 }
 
 type Part struct {
