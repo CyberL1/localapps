@@ -62,27 +62,34 @@ var upCmd = &cobra.Command{
 				findProcess := exec.Command("pgrep", "-f", currentPart.Run)
 
 				out, _ := findProcess.Output()
-				outTrimmed := strings.TrimSpace(string(out))
+				splitted := strings.Split(string(out), "\n")
 
 				var freePort int
-				if outTrimmed != "" {
-					findPort := exec.Command("cat", fmt.Sprintf("/proc/%s/environ", string(outTrimmed)))
-					out, _ = findPort.Output()
+				var isRunning bool
+				for _, pid := range splitted {
+					getDirectory := exec.Command("readlink", fmt.Sprintf("/proc/%s/cwd", string(pid)))
+					out, _ = getDirectory.Output()
 
-					splitted := strings.Split(string(out), "\x00")
 
-					for _, env := range splitted {
-						if strings.HasPrefix(env, "PORT=") {
-							freePort, _ = strconv.Atoi(strings.Split(env, "=")[1])
-							println(freePort)
-							break
+					if strings.TrimSpace(string(out)) == filepath.Join(utils.GetAppDirectory(appName), currentPart.Src) {
+						isRunning = true
+						findPort := exec.Command("cat", fmt.Sprintf("/proc/%s/environ", string(pid)))
+						out, _ = findPort.Output()
+
+						splitted := strings.Split(string(out), "\x00")
+
+						for _, env := range splitted {
+							if strings.HasPrefix(env, "PORT=") {
+								freePort, _ = strconv.Atoi(strings.Split(env, "=")[1])
+								break
+							}
 						}
 					}
-				} else {
-					freePort, _ = GetFreePort()
 				}
 
-				if len(out) == 0 {
+				if !isRunning {
+					freePort, _ = GetFreePort()
+
 					cmd := exec.Command(strings.Split(currentPart.Run, " ")[0], strings.Split(currentPart.Run, " ")[1:]...)
 					cmd.Dir = filepath.Join(utils.GetAppDirectory(appName), currentPart.Src)
 					cmd.Env = append(cmd.Env, fmt.Sprintf("PORT=%s", strconv.Itoa(freePort)))
