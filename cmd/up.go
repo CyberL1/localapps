@@ -59,18 +59,46 @@ var upCmd = &cobra.Command{
 					}
 				}
 
-				freePort, _ := GetFreePort()
+				findProcess := exec.Command("pgrep", "-f", currentPart.Run)
 
-				cmd := exec.Command(strings.Split(currentPart.Run, " ")[0], strings.Split(currentPart.Run, " ")[1:]...)
-				cmd.Dir = filepath.Join(utils.GetAppDirectory(appName), currentPart.Src)
-				cmd.Env = append(cmd.Env, fmt.Sprintf("PORT=%s", strconv.Itoa(freePort)))
+				out, _ := findProcess.Output()
+				outTrimmed := strings.TrimSpace(string(out))
 
-				cmd.Stdout = os.Stdout
-				cmd.Stderr = os.Stderr
+				var freePort int
+				if outTrimmed != "" {
+					findPort := exec.Command("cat", fmt.Sprintf("/proc/%s/environ", string(outTrimmed)))
+					out, _ = findPort.Output()
 
-				if err := cmd.Start(); err != nil {
-					w.Write([]byte(fmt.Sprintf("Failed to start app \"%s\": %s", appName, err)))
-					return
+					splitted := strings.Split(string(out), "\x00")
+
+					for _, env := range splitted {
+						if strings.HasPrefix(env, "PORT=") {
+							freePort, _ = strconv.Atoi(strings.Split(env, "=")[1])
+							println(freePort)
+							break
+						}
+					}
+				} else {
+					freePort, _ = GetFreePort()
+				}
+
+				if len(out) == 0 {
+					cmd := exec.Command(strings.Split(currentPart.Run, " ")[0], strings.Split(currentPart.Run, " ")[1:]...)
+					cmd.Dir = filepath.Join(utils.GetAppDirectory(appName), currentPart.Src)
+					cmd.Env = append(cmd.Env, fmt.Sprintf("PORT=%s", strconv.Itoa(freePort)))
+
+					cmd.Stdout = os.Stdout
+					cmd.Stderr = os.Stderr
+
+					if err := cmd.Start(); err != nil {
+						w.Write([]byte(fmt.Sprintf("Failed to start app \"%s\": %s", appName, err)))
+						return
+					}
+
+					go func() {
+						time.Sleep(30 * time.Second)
+						cmd.Process.Kill()
+					}()
 				}
 
 				// Wait for the app to be ready
@@ -84,11 +112,6 @@ var upCmd = &cobra.Command{
 
 				appUrl, _ := url.Parse(fmt.Sprintf("http://localhost:%s", strconv.Itoa(freePort)))
 				httputil.NewSingleHostReverseProxy(appUrl).ServeHTTP(w, r)
-
-				go func() {
-					time.Sleep(30 * time.Second)
-					cmd.Process.Kill()
-				}()
 
 				return
 			}
