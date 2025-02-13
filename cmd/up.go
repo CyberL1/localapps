@@ -44,21 +44,30 @@ var upCmd = &cobra.Command{
 					return
 				}
 
-				dockerAppName := "localapps-app-" + appName
+				var dockerAppName string
+				var dockerImageName string
 
 				var currentPart types.Part
+				var currentPartName string
+
 				var fallbackPart types.Part
-				for _, part := range app.Parts {
+				var fallbackPartName string
+
+				for partName, part := range app.Parts {
 					if part.Path == "" {
 						fallbackPart = part
+						fallbackPartName = partName
 					}
 
 					if strings.Split(r.URL.Path, "/")[1] == part.Path {
 						currentPart = part
-						dockerAppName += "-" + currentPart.Path
+						dockerAppName = "localapps-app-" + strings.ToLower(app.Name) + "-" + partName
+						dockerImageName = "localapps/" + strings.ToLower(app.Name) + "/" + partName
 						break
 					} else {
 						currentPart = fallbackPart
+						dockerAppName = "localapps-app-" + strings.ToLower(app.Name) + "-" + fallbackPartName
+						dockerImageName = "localapps/" + strings.ToLower(app.Name) + "/" + fallbackPartName
 					}
 				}
 
@@ -73,7 +82,8 @@ var upCmd = &cobra.Command{
 				} else {
 					freePort, _ = GetFreePort()
 
-					cmd := exec.Command("docker", append([]string{"run", "--rm", "--name", dockerAppName, "-p", strconv.Itoa(freePort) + ":80", "-e", "PORT=80", "node"}, strings.Split(currentPart.Run, " ")...)...)
+					print("localapps/" + strings.ToLower(app.Name) + "/" + currentPartName)
+					cmd := exec.Command("docker", "run", "--rm", "--name", dockerAppName, "-p", strconv.Itoa(freePort)+":80", "-e", "PORT=80", dockerImageName)
 					cmd.Dir = filepath.Join(utils.GetAppDirectory(appName), currentPart.Src)
 
 					cmd.Stdout = os.Stdout
