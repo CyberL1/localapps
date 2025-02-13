@@ -44,6 +44,8 @@ var upCmd = &cobra.Command{
 					return
 				}
 
+				dockerAppName := "localapps-app-" + appName
+
 				var currentPart types.Part
 				var fallbackPart types.Part
 				for _, part := range app.Parts {
@@ -53,46 +55,26 @@ var upCmd = &cobra.Command{
 
 					if strings.Split(r.URL.Path, "/")[1] == part.Path {
 						currentPart = part
+						dockerAppName += "-" + currentPart.Path
 						break
 					} else {
 						currentPart = fallbackPart
 					}
 				}
 
-				findProcess := exec.Command("pgrep", "-f", currentPart.Run)
-
+				findProcess := exec.Command("docker", "ps", "--format", "{{.Names}}", "-f", "name="+dockerAppName+"$")
 				out, _ := findProcess.Output()
-				splitted := strings.Split(string(out), "\n")
 
 				var freePort int
-				var isRunning bool
-				for _, pid := range splitted {
-					getDirectory := exec.Command("readlink", fmt.Sprintf("/proc/%s/cwd", string(pid)))
-					out, _ = getDirectory.Output()
-
-
-					if strings.TrimSpace(string(out)) == filepath.Join(utils.GetAppDirectory(appName), currentPart.Src) {
-						isRunning = true
-						findPort := exec.Command("cat", fmt.Sprintf("/proc/%s/environ", string(pid)))
-						out, _ = findPort.Output()
-
-						splitted := strings.Split(string(out), "\x00")
-
-						for _, env := range splitted {
-							if strings.HasPrefix(env, "PORT=") {
-								freePort, _ = strconv.Atoi(strings.Split(env, "=")[1])
-								break
-							}
-						}
-					}
-				}
-
-				if !isRunning {
+				if strings.TrimSpace(string(out)) == dockerAppName {
+					portCmd := exec.Command("docker", "port", dockerAppName, "80")
+					out, _ := portCmd.Output()
+					freePort, _ = strconv.Atoi(strings.TrimSpace(string(out)[8:]))
+				} else {
 					freePort, _ = GetFreePort()
 
-					cmd := exec.Command(strings.Split(currentPart.Run, " ")[0], strings.Split(currentPart.Run, " ")[1:]...)
+					cmd := exec.Command("docker", append([]string{"run", "--rm", "--name", dockerAppName, "-p", strconv.Itoa(freePort) + ":80", "-e", "PORT=80", "node"}, strings.Split(currentPart.Run, " ")...)...)
 					cmd.Dir = filepath.Join(utils.GetAppDirectory(appName), currentPart.Src)
-					cmd.Env = append(cmd.Env, fmt.Sprintf("PORT=%s", strconv.Itoa(freePort)))
 
 					cmd.Stdout = os.Stdout
 					cmd.Stderr = os.Stderr
@@ -104,7 +86,8 @@ var upCmd = &cobra.Command{
 
 					go func() {
 						time.Sleep(30 * time.Second)
-						cmd.Process.Kill()
+						cmd := exec.Command("docker", "stop", dockerAppName)
+						cmd.Start()
 					}()
 				}
 
