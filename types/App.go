@@ -6,7 +6,8 @@ type App struct {
 }
 
 type Part struct {
-	Src     string `yaml:"src"`
-	Path    string `yaml:"path,omitempty"`
-	Run     string `yaml:"run"`
+	Src  string `yaml:"src"`
+	Path string `yaml:"path,omitempty"`
+	Run  string `yaml:"run"`
+	Dev  string `yaml:"dev"`
 }
