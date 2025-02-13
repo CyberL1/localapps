@@ -48,7 +48,6 @@ var upCmd = &cobra.Command{
 				var dockerImageName string
 
 				var currentPart types.Part
-				var currentPartName string
 
 				var fallbackPart types.Part
 				var fallbackPartName string
@@ -82,7 +81,6 @@ var upCmd = &cobra.Command{
 				} else {
 					freePort, _ = GetFreePort()
 
-					print("localapps/" + strings.ToLower(app.Name) + "/" + currentPartName)
 					cmd := exec.Command("docker", "run", "--rm", "--name", dockerAppName, "-p", strconv.Itoa(freePort)+":80", "-e", "PORT=80", dockerImageName)
 					cmd.Dir = filepath.Join(utils.GetAppDirectory(appName), currentPart.Src)
 
@@ -112,8 +110,6 @@ var upCmd = &cobra.Command{
 
 				appUrl, _ := url.Parse(fmt.Sprintf("http://localhost:%s", strconv.Itoa(freePort)))
 				httputil.NewSingleHostReverseProxy(appUrl).ServeHTTP(w, r)
-
-				return
 			}
 		})
 
