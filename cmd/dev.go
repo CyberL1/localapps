@@ -49,6 +49,13 @@ var devCmd = &cobra.Command{
 			cmd.PrintErrf("failed to parse app file: %v\n", err)
 		}
 
+		for partName, part := range app.Parts {
+			if strings.TrimSpace(part.Dev) == "" {
+				println("Part", partName, "has no dev command")
+				os.Exit(1)
+			}
+		}
+
 		cmd.Println("Running app in dev mode")
 
 		http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
