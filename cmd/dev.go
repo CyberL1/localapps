@@ -106,8 +106,10 @@ var devCmd = &cobra.Command{
 			if !isRunning {
 				freePort, _ = GetFreePort()
 
-				cmd := exec.Command(strings.Split(currentPart.Dev, " ")[0], strings.Split(currentPart.Dev, " ")[1:]...)
+				cmd := exec.Command("/bin/sh", "-c", currentPart.Dev)
 				cmd.Dir = currentPart.Src
+
+				cmd.Env = append(cmd.Env, "PATH="+os.Getenv("PATH"))
 				cmd.Env = append(cmd.Env, fmt.Sprintf("PORT=%s", strconv.Itoa(freePort)))
 
 				cmd.Stdout = os.Stdout
