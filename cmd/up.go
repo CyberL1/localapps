@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
-	"os"
 	"os/exec"
 	"path/filepath"
 	"strconv"
@@ -81,21 +80,21 @@ var upCmd = &cobra.Command{
 				} else {
 					freePort, _ = GetFreePort()
 
-					cmd := exec.Command("docker", "run", "--rm", "--name", dockerAppName, "-p", strconv.Itoa(freePort)+":80", "-e", "PORT=80", dockerImageName)
-					cmd.Dir = filepath.Join(utils.GetAppDirectory(appName), currentPart.Src)
+					runCmd := exec.Command("docker", "run", "--rm", "--name", dockerAppName, "-p", strconv.Itoa(freePort)+":80", "-e", "PORT=80", dockerImageName)
+					runCmd.Dir = filepath.Join(utils.GetAppDirectory(appName), currentPart.Src)
 
-					cmd.Stdout = os.Stdout
-					cmd.Stderr = os.Stderr
+					cmd.Println("[app:"+app.Name+"]", "Got a http request while stopped - starting")
 
-					if err := cmd.Start(); err != nil {
+					if err := runCmd.Start(); err != nil {
 						w.Write([]byte(fmt.Sprintf("Failed to start app \"%s\": %s", appName, err)))
 						return
 					}
 
 					go func() {
 						time.Sleep(30 * time.Second)
-						cmd := exec.Command("docker", "stop", dockerAppName)
-						cmd.Start()
+						stopCmd := exec.Command("docker", "stop", dockerAppName)
+						cmd.Println("[app:"+app.Name+"]", "Exceeded timeout (30s) - stopping")
+						stopCmd.Start()
 					}()
 				}
 
@@ -113,7 +112,10 @@ var upCmd = &cobra.Command{
 			}
 		})
 
-		http.ListenAndServe(":8080", nil)
+		err := http.ListenAndServe(":8080", nil)
+		if err != nil {
+			fmt.Println(err)
+		}
 	},
 }
 
