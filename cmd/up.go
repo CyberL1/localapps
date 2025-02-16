@@ -29,6 +29,20 @@ var upCmd = &cobra.Command{
 		cmd.Println("Starting server")
 
 		http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+			// Check if Docker is installed
+			if _, err := exec.LookPath("docker"); err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				w.Write([]byte("Docker is not installed"))
+				return
+			}
+
+			// Check if Docker daemon is running
+			if err := exec.Command("docker", "info").Run(); err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				w.Write([]byte("Docker daemon is not running"))
+				return
+			}
+
 			if len(strings.Split(r.Host, ".")) == 2 {
 				http.Redirect(w, r, "//www."+r.Host, http.StatusTemporaryRedirect)
 				return
