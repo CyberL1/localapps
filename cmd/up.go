@@ -29,6 +29,11 @@ var upCmd = &cobra.Command{
 		cmd.Println("Starting server")
 
 		http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+			if r.Host == "localhost:8080" {
+				w.WriteHeader(http.StatusForbidden)
+				return
+			}
+
 			// Check if Docker is installed
 			if _, err := exec.LookPath("docker"); err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
