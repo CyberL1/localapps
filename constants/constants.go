@@ -8,5 +8,7 @@ import (
 var homeDir = os.Getenv("HOME")
 
 var (
-	LocalappsDir = filepath.Join(homeDir, "localapps")
+	LocalappsDir     = filepath.Join(homeDir, "localapps")
+	Version          string
+	GithubReleaseUrl = "https://api.github.com/repos/CyberL1/localapps/releases/latest"
 )
