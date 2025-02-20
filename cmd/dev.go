@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"io"
+	"localapps/types"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -13,7 +14,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/CyberL1/localapps/types"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
 )

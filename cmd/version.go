@@ -2,12 +2,12 @@ package cmd
 
 import (
 	"fmt"
+	"localapps/constants"
+	"localapps/utils"
 	"os"
 	"os/exec"
 	"runtime"
 
-	"github.com/CyberL1/localapps/constants"
-	"github.com/CyberL1/localapps/utils"
 	"github.com/spf13/cobra"
 )
 

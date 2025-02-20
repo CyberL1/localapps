@@ -3,11 +3,11 @@ package utils
 import (
 	"fmt"
 	"io"
+	"localapps/constants"
+	"localapps/types"
 	"os"
 	"path/filepath"
 
-	"github.com/CyberL1/localapps/constants"
-	"github.com/CyberL1/localapps/types"
 	"github.com/go-yaml/yaml"
 )
 

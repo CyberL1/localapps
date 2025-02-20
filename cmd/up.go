@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"fmt"
+	"localapps/types"
+	"localapps/utils"
 	"net"
 	"net/http"
 	"net/http/httputil"
@@ -12,8 +14,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/CyberL1/localapps/types"
-	"github.com/CyberL1/localapps/utils"
 	"github.com/spf13/cobra"
 )
 

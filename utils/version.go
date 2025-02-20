@@ -3,10 +3,9 @@ package utils
 import (
 	"encoding/json"
 	"io"
+	"localapps/constants"
+	"localapps/types"
 	"net/http"
-
-	"github.com/CyberL1/localapps/constants"
-	"github.com/CyberL1/localapps/types"
 )
 
 func GetLatestCliVersion() (*types.GithubRelease, error) {

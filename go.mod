@@ -1,4 +1,4 @@
-module github.com/CyberL1/localapps
+module localapps
 
 go 1.23.5
 

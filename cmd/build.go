@@ -2,12 +2,12 @@ package cmd
 
 import (
 	"io"
+	"localapps/types"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 
-	"github.com/CyberL1/localapps/types"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
 )

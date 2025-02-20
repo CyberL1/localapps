@@ -1,11 +1,11 @@
 package cmd
 
 import (
+	"localapps/constants"
+	"localapps/utils"
 	"os"
 	"path/filepath"
 
-	"github.com/CyberL1/localapps/constants"
-	"github.com/CyberL1/localapps/utils"
 	"github.com/spf13/cobra"
 )
 
