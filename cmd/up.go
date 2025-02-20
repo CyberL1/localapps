@@ -29,7 +29,7 @@ var upCmd = &cobra.Command{
 		cmd.Println("Starting server")
 
 		http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-			if r.Host == "localhost:8080" {
+			if strings.HasSuffix(r.Host, "localhost:8080") {
 				w.WriteHeader(http.StatusForbidden)
 				return
 			}
