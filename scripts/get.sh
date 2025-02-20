@@ -22,7 +22,7 @@ else
   esac
 fi
 
-download_url="https://github.com/CyberL1/localapp/releases/latest/download/localapps-${target}.zip"
+download_url="https://github.com/CyberL1/localapps/releases/latest/download/localapps-${target}.zip"
 
 if [ ! -d $dir ]; then
   mkdir -p $dir
