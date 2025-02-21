@@ -34,7 +34,7 @@ jobs:
         run: |
           export GOOS=${{ matrix.os }}
           export GOARCH=${{ matrix.arch }}
-          go build -ldflags "-X localapps/constants.Version=${{ env.RELEASE_VERSION }}"
+          go build -ldflags "-s -w -X localapps/constants.Version=${{ env.RELEASE_VERSION }}"
       - name: Pack binary
         run: zip localapps-${{ matrix.os }}-${{ matrix.arch }}.zip localapps${{ matrix.os == 'windows' && '.exe' || '' }}
       - name: Create release
