@@ -12,7 +12,7 @@ import (
 )
 
 func GetApp(appName string) (*types.App, error) {
-	appFilePath := filepath.Join(constants.LocalappsDir, appName, "app.yml")
+	appFilePath := filepath.Join(constants.LocalappsDir, "apps", appName, "app.yml")
 
 	file, err := os.Open(appFilePath)
 	if err != nil {

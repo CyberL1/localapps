@@ -11,3 +11,8 @@ type Part struct {
 	Run  string `yaml:"run"`
 	Dev  string `yaml:"dev"`
 }
+
+type AppNameWithSubdomain struct {
+	Name      string `json:"name"`
+	Subdomain string `json:"subdomain"`
+}

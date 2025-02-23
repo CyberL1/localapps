@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"localapps/types"
+	"localapps/utils"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -104,7 +105,7 @@ var devCmd = &cobra.Command{
 			}
 
 			if !isRunning {
-				freePort, _ = GetFreePort()
+				freePort, _ = utils.GetFreePort()
 
 				cmd := exec.Command("/bin/sh", "-c", currentPart.Dev)
 				cmd.Dir = currentPart.Src
