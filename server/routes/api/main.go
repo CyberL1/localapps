@@ -3,12 +3,10 @@ package api
 import (
 	"encoding/json"
 	"fmt"
-	"localapps/constants"
+	dbClient "localapps/db/client"
 	"localapps/types"
 	"localapps/utils"
 	"net/http"
-	"os"
-	"path/filepath"
 )
 
 type Handler struct{}
@@ -26,24 +24,26 @@ func (h *Handler) RegisterRoutes() *http.ServeMux {
 }
 
 func appList(w http.ResponseWriter, r *http.Request) {
-	files, err := os.ReadDir(filepath.Join(constants.LocalappsDir, "apps"))
+	db, _ := dbClient.GetClient()
+	apps, err := db.ListApps(dbClient.Ctx)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Error reading directory: %s", err), http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("Error fetching apps: %s", err), http.StatusInternalServerError)
 		return
 	}
 
-	var list []types.AppNameWithSubdomain
+	var list []types.ApiAppResponse
 
-	for _, file := range files {
-		app, err := utils.GetApp(file.Name())
+	for _, appData := range apps {
+		app, err := utils.GetApp(appData.ID)
 
 		if err != nil {
 			continue
 		}
 
-		list = append(list, types.AppNameWithSubdomain{
-			Name:      app.Name,
-			Subdomain: file.Name(),
+		list = append(list, types.ApiAppResponse{
+			Id:   appData.ID,
+			Name: app.Name,
+			InstalledAt: appData.InstalledAt.Time.String(),
 		})
 	}
 

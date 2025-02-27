@@ -3,7 +3,7 @@ package routes
 import (
 	"encoding/json"
 	"fmt"
-	"localapps/constants"
+	"localapps/resources"
 	"localapps/types"
 	"net/http"
 	"path/filepath"
@@ -32,13 +32,19 @@ func homePage(w http.ResponseWriter, r *http.Request) {
 	}
 	defer resp.Body.Close()
 
-	var list []*types.AppNameWithSubdomain
+	var list []*types.ApiAppResponse
 	if err := json.NewDecoder(resp.Body).Decode(&list); err != nil {
 		http.Error(w, fmt.Sprintf("Error decoding response: %s", err), http.StatusInternalServerError)
 		return
 	}
 
-	templ, err := template.New("home.html").ParseFiles(filepath.Join(constants.LocalappsDir, "pages", "home.html"))
+	fileContent, err := resources.Resources.ReadFile(filepath.Join("pages", "home.html"))
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Error reading file: %s", err), http.StatusInternalServerError)
+		return
+	}
+
+	templ, err := template.New("home.html").Parse(string(fileContent))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

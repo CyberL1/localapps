@@ -46,7 +46,7 @@ var buildCmd = &cobra.Command{
 		cmd.Println("Building " + app.Name)
 
 		for partName, part := range app.Parts {
-			buildCmd := exec.Command("docker", "build", "-t", "localapps/"+strings.ToLower(app.Name)+"/"+partName, part.Src)
+			buildCmd := exec.Command("docker", "build", "-t", "localapps/apps/"+strings.Split(file.Name(), "/")[len(strings.Split(file.Name(), "/"))-2]+"/"+partName, part.Src)
 
 			buildCmd.Stdout = os.Stdout
 			buildCmd.Stderr = os.Stderr

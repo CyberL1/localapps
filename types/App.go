@@ -12,7 +12,8 @@ type Part struct {
 	Dev  string `yaml:"dev"`
 }
 
-type AppNameWithSubdomain struct {
-	Name      string `json:"name"`
-	Subdomain string `json:"subdomain"`
+type ApiAppResponse struct {
+	Id   string `json:"id"`
+	Name string `json:"name"`
+	InstalledAt string `json:"installedAt"`
 }

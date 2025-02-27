@@ -57,6 +57,8 @@ func AppProxy(next http.Handler) http.Handler {
 			var fallbackPart types.Part
 			var fallbackPartName string
 
+			appId := strings.Split(r.Host, ".")[0]
+
 			for partName, part := range app.Parts {
 				if part.Path == "" {
 					fallbackPart = part
@@ -65,13 +67,13 @@ func AppProxy(next http.Handler) http.Handler {
 
 				if strings.Split(r.URL.Path, "/")[1] == part.Path {
 					currentPart = part
-					dockerAppName = "localapps-app-" + strings.ToLower(app.Name) + "-" + partName
-					dockerImageName = "localapps/" + strings.ToLower(app.Name) + "/" + partName
+					dockerAppName = "localapps-app-" + appId + "-" + partName
+					dockerImageName = "localapps/apps/" + appId + "/" + partName
 					break
 				} else {
 					currentPart = fallbackPart
-					dockerAppName = "localapps-app-" + strings.ToLower(app.Name) + "-" + fallbackPartName
-					dockerImageName = "localapps/" + strings.ToLower(app.Name) + "/" + fallbackPartName
+					dockerAppName = "localapps-app-" + appId + "-" + fallbackPartName
+					dockerImageName = "localapps/apps/" + appId + "/" + fallbackPartName
 				}
 			}
 
@@ -89,7 +91,7 @@ func AppProxy(next http.Handler) http.Handler {
 				runCmd := exec.Command("docker", "run", "--rm", "--name", dockerAppName, "-p", strconv.Itoa(freePort)+":80", "-e", "PORT=80", dockerImageName)
 				runCmd.Dir = filepath.Join(utils.GetAppDirectory(appName), currentPart.Src)
 
-				fmt.Println("[app:"+app.Name+"]", "Got a http request while stopped - starting")
+				fmt.Println("[app:"+appId+"]", "Got a http request while stopped - starting")
 
 				if err := runCmd.Start(); err != nil {
 					w.Write([]byte(fmt.Sprintf("Failed to start app \"%s\": %s", appName, err)))
@@ -99,7 +101,7 @@ func AppProxy(next http.Handler) http.Handler {
 				go func() {
 					time.Sleep(30 * time.Second)
 					stopCmd := exec.Command("docker", "stop", dockerAppName)
-					fmt.Println("[app:"+app.Name+"]", "Exceeded timeout (30s) - stopping")
+					fmt.Println("[app:"+appId+"]", "Exceeded timeout (30s) - stopping")
 					stopCmd.Start()
 				}()
 			}
