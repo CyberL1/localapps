@@ -18,7 +18,7 @@ var listCmd = &cobra.Command{
 	Short: "List installed localapps",
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
-		files, err := os.ReadDir(constants.LocalappsDir)
+		files, err := os.ReadDir(filepath.Join(constants.LocalappsDir, "apps"))
 		if err != nil {
 			cmd.PrintErrln("Error reading directory:", err)
 			return
@@ -26,7 +26,7 @@ var listCmd = &cobra.Command{
 
 		for _, file := range files {
 			app, _ := utils.GetApp(file.Name())
-			cmd.Println(app.Name, "->", filepath.Join(constants.LocalappsDir, file.Name()))
+			cmd.Println(app.Name, "->", filepath.Join(constants.LocalappsDir, "apps", file.Name()))
 		}
 	},
 }

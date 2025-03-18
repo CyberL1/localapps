@@ -1,17 +1,20 @@
 package middlewares
 
 import (
+	"context"
 	"fmt"
-	"localapps/types"
 	"localapps/utils"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
-	"os/exec"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/filters"
+	"github.com/docker/docker/client"
+	"github.com/docker/go-connections/nat"
 )
 
 func AppProxy(next http.Handler) http.Handler {
@@ -35,74 +38,82 @@ func AppProxy(next http.Handler) http.Handler {
 				return
 			}
 
-			// Check if Docker is installed
-			if _, err := exec.LookPath("docker"); err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-				w.Write([]byte("Docker is not installed"))
-				return
-			}
-
-			// Check if Docker daemon is running
-			if err := exec.Command("docker", "info").Run(); err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-				w.Write([]byte("Docker daemon is not running"))
+			cli, err := client.NewClientWithOpts(client.FromEnv)
+			if err != nil {
+				w.Write([]byte(fmt.Sprintf("Failed to connect to Docker daemon: %s", err)))
 				return
 			}
 
 			var dockerAppName string
 			var dockerImageName string
-
-			var currentPart types.Part
-
-			var fallbackPart types.Part
 			var fallbackPartName string
 
 			appId := strings.Split(r.Host, ".")[0]
 
 			for partName, part := range app.Parts {
 				if part.Path == "" {
-					fallbackPart = part
 					fallbackPartName = partName
 				}
 
 				if strings.Split(r.URL.Path, "/")[1] == part.Path {
-					currentPart = part
 					dockerAppName = "localapps-app-" + appId + "-" + partName
 					dockerImageName = "localapps/apps/" + appId + "/" + partName
 					break
 				} else {
-					currentPart = fallbackPart
 					dockerAppName = "localapps-app-" + appId + "-" + fallbackPartName
 					dockerImageName = "localapps/apps/" + appId + "/" + fallbackPartName
 				}
 			}
 
-			findProcess := exec.Command("docker", "ps", "--format", "{{.Names}}", "-f", "name="+dockerAppName+"$")
-			out, _ := findProcess.Output()
+			containersByName, _ := cli.ContainerList(context.Background(), container.ListOptions{
+				Filters: filters.NewArgs(
+					filters.Arg("name", dockerAppName),
+				),
+			})
 
 			var freePort int
-			if strings.TrimSpace(string(out)) == dockerAppName {
-				portCmd := exec.Command("docker", "port", dockerAppName, "80")
-				out, _ := portCmd.Output()
-				freePort, _ = strconv.Atoi(strings.TrimSpace(string(out)[8:]))
+			if len(containersByName) > 0 {
+				appContainer := containersByName[0]
+
+				containerPort := appContainer.Ports[0].PublicPort
+				freePort = int(containerPort)
 			} else {
 				freePort, _ = utils.GetFreePort()
 
-				runCmd := exec.Command("docker", "run", "--rm", "--name", dockerAppName, "-p", strconv.Itoa(freePort)+":80", "-e", "PORT=80", dockerImageName)
-				runCmd.Dir = filepath.Join(utils.GetAppDirectory(appName), currentPart.Src)
+				config := container.Config{
+					Image: dockerImageName,
+					Env:   []string{"PORT=80"},
+					ExposedPorts: nat.PortSet{
+						"80": struct{}{},
+					},
+				}
 
-				fmt.Println("[app:"+appId+"]", "Got a http request while stopped - starting")
+				hostConfig := container.HostConfig{
+					PortBindings: nat.PortMap{
+						"80": {
+							{
+								HostIP:   "0.0.0.0",
+								HostPort: strconv.Itoa(freePort),
+							},
+						},
+					},
+				}
 
-				if err := runCmd.Start(); err != nil {
+				createdContainer, _ := cli.ContainerCreate(context.Background(), &config, &hostConfig, nil, nil, dockerAppName)
+				fmt.Println("[app:"+appId+"]", "Got a http request while stopped - creating container")
+
+				if err := cli.ContainerStart(context.Background(), createdContainer.ID, container.StartOptions{}); err != nil {
 					w.Write([]byte(fmt.Sprintf("Failed to start app \"%s\": %s", appName, err)))
 					return
 				}
 
 				go func() {
 					time.Sleep(30 * time.Second)
-					stopCmd := exec.Command("docker", "stop", dockerAppName)
-					fmt.Println("[app:"+appId+"]", "Exceeded timeout (30s) - stopping")
-					stopCmd.Start()
+
+					fmt.Println("[app:"+appId+"]", "Exceeded timeout (30s) - removing container")
+					cli.ContainerRemove(context.Background(), createdContainer.ID, container.RemoveOptions{
+						Force: true,
+					})
 				}()
 			}
 
