@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -29,7 +30,6 @@ func AppProxy(next http.Handler) http.Handler {
 		}
 
 		if len(strings.Split(r.Host, ".")) == 3 {
-
 			appName := strings.Split(r.Host, ".")[0]
 			app, err := utils.GetApp(appName)
 
@@ -96,7 +96,7 @@ func AppProxy(next http.Handler) http.Handler {
 								HostPort: strconv.Itoa(freePort),
 							},
 						},
-					},
+					}, Binds: []string{fmt.Sprintf("%s:/storage", filepath.Join(utils.GetAppDirectory(appId), "storage"))},
 				}
 
 				createdContainer, _ := cli.ContainerCreate(context.Background(), &config, &hostConfig, nil, nil, dockerAppName)
