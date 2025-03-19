@@ -99,8 +99,10 @@ func AppProxy(next http.Handler) http.Handler {
 					}, Binds: []string{fmt.Sprintf("%s:/storage", filepath.Join(utils.GetAppDirectory(appId), "storage"))},
 				}
 
+				appNameWithPart := strings.Replace(strings.TrimPrefix(dockerAppName, "localapps-app-"), "-", ":", 1)
+
 				createdContainer, _ := cli.ContainerCreate(context.Background(), &config, &hostConfig, nil, nil, dockerAppName)
-				fmt.Println("[app:"+appId+"]", "Got a http request while stopped - creating container")
+				fmt.Println("[app:"+appNameWithPart+"]", "Got a http request while stopped - creating container")
 
 				if err := cli.ContainerStart(context.Background(), createdContainer.ID, container.StartOptions{}); err != nil {
 					w.Write([]byte(fmt.Sprintf("Failed to start app \"%s\": %s", appName, err)))
@@ -110,7 +112,7 @@ func AppProxy(next http.Handler) http.Handler {
 				go func() {
 					time.Sleep(30 * time.Second)
 
-					fmt.Println("[app:"+appId+"]", "Exceeded timeout (30s) - removing container")
+					fmt.Println("[app:"+appNameWithPart+"]", "Exceeded timeout (30s) - removing container")
 					cli.ContainerRemove(context.Background(), createdContainer.ID, container.RemoveOptions{
 						Force: true,
 					})
