@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	dbClient "localapps/db/client"
+	adminApi "localapps/server/routes/api/admin"
 	"localapps/types"
 	"localapps/utils"
 	"net/http"
@@ -17,6 +18,8 @@ func NewHandler() *Handler {
 
 func (h *Handler) RegisterRoutes() *http.ServeMux {
 	r := http.NewServeMux()
+
+	r.Handle("/admin/", http.StripPrefix("/admin", adminApi.NewHandler().RegisterRoutes()))
 
 	r.HandleFunc("/apps", appList)
 
@@ -41,8 +44,8 @@ func appList(w http.ResponseWriter, r *http.Request) {
 		}
 
 		list = append(list, types.ApiAppResponse{
-			Id:   appData.ID,
-			Name: app.Name,
+			Id:          appData.ID,
+			Name:        app.Name,
 			InstalledAt: appData.InstalledAt.Time.String(),
 		})
 	}

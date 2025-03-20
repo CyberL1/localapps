@@ -59,6 +59,13 @@ var upCmd = &cobra.Command{
 		fmt.Println("Running database migrations")
 		dbClient.Migrate()
 
+		fmt.Println("Fetching server configuration")
+		err := utils.UpdateConfigCache()
+		if err != nil {
+			fmt.Printf("Error updating config cache: %s\n", err)
+			return
+		}
+
 		cmd.Println("Starting HTTP server")
 
 		router := http.NewServeMux()

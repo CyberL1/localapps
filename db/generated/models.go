@@ -12,3 +12,8 @@ type App struct {
 	ID          string
 	InstalledAt pgtype.Timestamp
 }
+
+type Config struct {
+	Key   string
+	Value pgtype.Text
+}
