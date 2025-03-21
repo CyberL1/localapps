@@ -57,8 +57,8 @@
 
 <body>
   <main class="apps">
-    {{range .}}
-    <a class="app" href="//{{.Id}}.apps.localhost" target="_blank">
+    {{range .Apps}}
+    <a class="app" href="//{{.Id}}.{{$.Config.Domain}}" target="_blank">
       <img id="icon" src="https://fav.farm/fire" />
       <div class="info">
         <span id="name">{{.Name}}</span>

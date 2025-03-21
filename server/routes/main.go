@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"localapps/resources"
 	"localapps/types"
+	"localapps/utils"
 	"net/http"
 	"path/filepath"
 	"text/template"
@@ -51,7 +52,15 @@ func homePage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "text/html")
-	if err = template.Must(templ.Clone()).Execute(w, list); err != nil {
+	data := struct {
+		Config types.Config
+		Apps   []*types.ApiAppResponse
+	}{
+		Config: utils.CachedConfig,
+		Apps:   list,
+	}
+
+	if err = template.Must(templ.Clone()).Execute(w, data); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
