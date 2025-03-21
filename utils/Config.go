@@ -7,11 +7,8 @@ import (
 	db "localapps/db/generated"
 	"localapps/types"
 	"reflect"
-	"strings"
 
 	"github.com/jackc/pgx/v5/pgtype"
-	"golang.org/x/text/cases"
-	"golang.org/x/text/language"
 )
 
 var CachedConfig types.Config
@@ -36,11 +33,10 @@ func UpdateConfigCache() error {
 	configType := reflect.TypeOf(CachedConfig)
 	for i := range configType.NumField() {
 		field := configType.Field(i)
-		fieldName := strings.ToLower(field.Name)
 
-		if _, ok := configMap[strings.ToLower(fieldName)]; ok {
+		if _, ok := configMap[field.Name]; ok {
 			fieldValue := reflect.ValueOf(&CachedConfig).Elem().FieldByName(field.Name)
-			json.Unmarshal([]byte(configMap[fieldName]), fieldValue.Addr().Interface())
+			json.Unmarshal([]byte(configMap[field.Name]), fieldValue.Addr().Interface())
 		}
 	}
 	return nil
@@ -64,13 +60,13 @@ func ValidateConfig() error {
 	for i := range configStruct.NumField() {
 		field := configStruct.Field(i)
 
-		if _, ok := configMap[strings.ToLower(field.Name)]; !ok {
-			missingKeys = append(missingKeys, strings.ToLower(field.Name))
+		if _, ok := configMap[field.Name]; !ok {
+			missingKeys = append(missingKeys, field.Name)
 		}
 	}
 
 	for _, k := range missingKeys {
-		field, _ := reflect.TypeOf(types.Config{}).FieldByName(cases.Title(language.English).String(k))
+		field, _ := reflect.TypeOf(types.Config{}).FieldByName(k)
 		defaultValue := field.Tag.Get("default")
 
 		client.SetConfigKey(dbClient.Ctx, db.SetConfigKeyParams{Key: k, Value: pgtype.Text{String: defaultValue, Valid: true}})
