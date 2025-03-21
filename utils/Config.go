@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"encoding/json"
 	dbClient "localapps/db/client"
 
 	db "localapps/db/generated"
@@ -39,9 +40,7 @@ func UpdateConfigCache() error {
 
 		if _, ok := configMap[strings.ToLower(fieldName)]; ok {
 			fieldValue := reflect.ValueOf(&CachedConfig).Elem().FieldByName(field.Name)
-			if fieldValue.IsValid() && fieldValue.CanSet() {
-				fieldValue.SetString(configMap[fieldName])
-			}
+			json.Unmarshal([]byte(configMap[fieldName]), fieldValue.Addr().Interface())
 		}
 	}
 	return nil
