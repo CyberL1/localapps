@@ -51,3 +51,20 @@ func (q *Queries) SetConfigKey(ctx context.Context, arg SetConfigKeyParams) (Con
 	err := row.Scan(&i.Key, &i.Value)
 	return i, err
 }
+
+const updateConfigKey = `-- name: UpdateConfigKey :one
+UPDATE config SET value = $2 WHERE key = $1
+RETURNING key, value
+`
+
+type UpdateConfigKeyParams struct {
+	Key   string
+	Value pgtype.Text
+}
+
+func (q *Queries) UpdateConfigKey(ctx context.Context, arg UpdateConfigKeyParams) (Config, error) {
+	row := q.db.QueryRow(ctx, updateConfigKey, arg.Key, arg.Value)
+	var i Config
+	err := row.Scan(&i.Key, &i.Value)
+	return i, err
+}
