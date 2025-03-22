@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -15,14 +16,19 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"syscall"
+	"time"
 
-	embeddedpostgres "github.com/fergusstrange/embedded-postgres"
+	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/client"
+	"github.com/docker/go-connections/nat"
 	"github.com/spf13/cobra"
 
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
@@ -36,36 +42,97 @@ var upCmd = &cobra.Command{
 	Short: "Start localapps server",
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
-		var isExternalDb bool
-		var database *embeddedpostgres.EmbeddedPostgres
+		cmd.Println("Creating database server container")
+		freePort, _ := utils.GetFreePort()
 
-		if _, found := os.LookupEnv("LOCALAPPS_DB"); found {
-			isExternalDb = true
-		} else {
-			cmd.Println("Starting built-in database server")
+		cli, err := client.NewClientWithOpts(client.FromEnv)
+		if err != nil {
+			fmt.Printf("Failed to connect to Docker daemon: %s\n", err)
+			return
+		}
 
-			freePort, _ := utils.GetFreePort()
-			database = embeddedpostgres.NewDatabase(embeddedpostgres.DefaultConfig().
-				Username("localapps").
-				Password("localapps").
-				Database("localapps").
-				RuntimePath(filepath.Join(constants.LocalappsDir, "postgres")).
-				DataPath(filepath.Join(constants.LocalappsDir, "data")).
-				Port(uint32(freePort)))
-
-			if err := database.Start(); err != nil {
-				cmd.Println(err)
+		var databasePassword string
+		pgPassFilePath := filepath.Join(constants.LocalappsDir, ".pgpasswd")
+		if _, err := os.Stat(pgPassFilePath); err == nil {
+			file, err := os.Open(pgPassFilePath)
+			if err != nil {
+				fmt.Printf("Error opening .pgpasswd file: %s\n", err)
 				return
 			}
+			defer file.Close()
 
-			os.Setenv("LOCALAPPS_DB", fmt.Sprintf("postgres://localapps:localapps@localhost:%d/localapps?sslmode=disable", freePort))
+			content, err := io.ReadAll(file)
+			if err != nil {
+				fmt.Printf("Error reading .pgpasswd file: %s\n", err)
+				return
+			}
+			databasePassword = string(content)
+		} else {
+			databasePassword = strings.ReplaceAll(uuid.NewString(), "-", "")
+
+			file, err := os.Create(pgPassFilePath)
+			if err != nil {
+				fmt.Printf("Error creating .pgpasswd file: %s\n", err)
+				return
+			}
+			defer file.Close()
+
+			_, err = file.WriteString(databasePassword)
+			if err != nil {
+				fmt.Printf("Error writing to .pgpasswd file: %s\n", err)
+				return
+			}
+		}
+
+		config := container.Config{
+			Image: "postgres:17-alpine",
+			Env: []string{
+				"POSTGRES_USER=localapps",
+				fmt.Sprintf("POSTGRES_PASSWORD=%s", databasePassword),
+			},
+			ExposedPorts: nat.PortSet{"5432": struct{}{}},
+		}
+
+		hostConfig := container.HostConfig{
+			PortBindings: nat.PortMap{
+				"5432": {
+					{
+						HostIP:   "0.0.0.0",
+						HostPort: strconv.Itoa(freePort),
+					},
+				},
+			},
+			Binds: []string{fmt.Sprintf("%s:/var/lib/postgresql/data", filepath.Join(constants.LocalappsDir, "data"))},
+		}
+
+		databaseContainer, err := cli.ContainerCreate(context.Background(), &config, &hostConfig, nil, nil, "localapps-database")
+		if err != nil {
+			fmt.Printf("Failed to create database container: %s\n", err)
+			return
+		}
+
+		if err := cli.ContainerStart(context.Background(), databaseContainer.ID, container.StartOptions{}); err != nil {
+			cmd.Printf("Failed to start database container: %s\n", err)
+			return
+		}
+
+		os.Setenv("LOCALAPPS_DB", fmt.Sprintf("postgres://localapps:%s@localhost:%d/localapps?sslmode=disable", databasePassword, freePort))
+
+		fmt.Println("Waiting for database client to connect")
+		for {
+			_, err := dbClient.GetClient()
+			if err == nil {
+				break
+			}
+			fmt.Println("Database server not ready, retrying in 1 second")
+			time.Sleep(1 * time.Second)
 		}
 
 		fmt.Println("Running database migrations")
 		dbClient.Migrate()
 
 		fmt.Println("Fetching server configuration")
-		err := utils.UpdateConfigCache()
+		err = utils.UpdateConfigCache()
 		if err != nil {
 			fmt.Printf("Error updating config cache: %s\n", err)
 			return
@@ -134,18 +201,15 @@ var upCmd = &cobra.Command{
 		go func() {
 			<-stop
 
-			if !isExternalDb {
-				cmd.Println("Stopping built-in database server")
-				if err := database.Stop(); err != nil {
-					cmd.PrintErrln(err)
-				}
+			cmd.Println("Removing database container")
+			if err := cli.ContainerRemove(context.Background(), databaseContainer.ID, container.RemoveOptions{Force: true}); err != nil {
+				cmd.Printf("Failed to remove database container: %s\n", err)
 			}
-
 			os.Exit(0)
 		}()
 
 		if err := http.ListenAndServe(":8080", middlewares.AppProxy(router)); err != nil {
-			fmt.Println(err)
+			fmt.Printf("Failed to bind to port 8080: %s\n", err)
 			os.Exit(1)
 		}
 	},

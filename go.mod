@@ -5,6 +5,7 @@ go 1.23.5
 require (
 	github.com/docker/go-connections v0.5.0
 	github.com/go-yaml/yaml v2.1.0+incompatible
+	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx/v5 v5.7.2
 	github.com/pressly/goose/v3 v3.24.1
 	github.com/spf13/cobra v1.9.1
@@ -32,7 +33,6 @@ require (
 	github.com/opencontainers/image-spec v1.1.1 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/sethvargo/go-retry v0.3.0 // indirect
-	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.60.0 // indirect
 	go.opentelemetry.io/otel v1.35.0 // indirect
@@ -50,7 +50,6 @@ require (
 
 require (
 	github.com/docker/docker v28.0.1+incompatible
-	github.com/fergusstrange/embedded-postgres v1.30.0
 	github.com/golang-migrate/migrate/v4 v4.18.2
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.6 // indirect
