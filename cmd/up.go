@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
 	"github.com/spf13/cobra"
@@ -82,6 +83,10 @@ var upCmd = &cobra.Command{
 				fmt.Printf("Error writing to .pgpasswd file: %s\n", err)
 				return
 			}
+		}
+
+		if c, _ := cli.ContainerList(context.Background(), container.ListOptions{Filters: filters.NewArgs(filters.Arg("name", "localapps-database")), All: true}); len(c) > 0 {
+			cli.ContainerRemove(context.Background(), c[0].ID, container.RemoveOptions{Force: true})
 		}
 
 		config := container.Config{
