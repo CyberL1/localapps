@@ -85,8 +85,12 @@ var upCmd = &cobra.Command{
 			}
 		}
 
-		if c, _ := cli.ContainerList(context.Background(), container.ListOptions{Filters: filters.NewArgs(filters.Arg("name", "localapps-database")), All: true}); len(c) > 0 {
-			cli.ContainerRemove(context.Background(), c[0].ID, container.RemoveOptions{Force: true})
+		if staleContainers, _ := cli.ContainerList(context.Background(), container.ListOptions{Filters: filters.NewArgs(filters.Arg("name", "localapps-")), All: true}); len(staleContainers) > 0 {
+			fmt.Printf("Found %d stale containers, removing\n", len(staleContainers))
+
+			for _, c := range staleContainers {
+				cli.ContainerRemove(context.Background(), c.ID, container.RemoveOptions{Force: true})
+			}
 		}
 
 		config := container.Config{
