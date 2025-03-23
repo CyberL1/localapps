@@ -1,5 +1,5 @@
 -- +goose Up
-CREATE TABLE apps ("id" text NOT NULL, "installedAt" timestamp NOT NULL);
+CREATE TABLE apps ("id" text NOT NULL, "installed_at" timestamp NOT NULL);
 
 -- +goose Down
 DROP DATABASE apps;

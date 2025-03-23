@@ -11,7 +11,7 @@ import (
 
 const createApp = `-- name: CreateApp :one
 INSERT INTO apps (id) VALUES ($1)
-RETURNING id, "installedAt"
+RETURNING id, installed_at
 `
 
 func (q *Queries) CreateApp(ctx context.Context, id string) (App, error) {
@@ -31,7 +31,7 @@ func (q *Queries) DeleteApp(ctx context.Context, id string) error {
 }
 
 const getApp = `-- name: GetApp :one
-SELECT id, "installedAt" FROM apps
+SELECT id, installed_at FROM apps
 WHERE id = $1
 `
 
@@ -43,7 +43,7 @@ func (q *Queries) GetApp(ctx context.Context, id string) (App, error) {
 }
 
 const listApps = `-- name: ListApps :many
-SELECT id, "installedAt" FROM apps
+SELECT id, installed_at FROM apps
 `
 
 func (q *Queries) ListApps(ctx context.Context) ([]App, error) {
