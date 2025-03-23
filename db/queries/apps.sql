@@ -6,7 +6,7 @@ SELECT * FROM apps
 WHERE id = $1;
 
 -- name: CreateApp :one
-INSERT INTO apps (id) VALUES ($1)
+INSERT INTO apps (id, installed_at) VALUES ($1, $2)
 RETURNING *;
 
 -- name: DeleteApp :exec

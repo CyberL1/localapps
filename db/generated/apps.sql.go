@@ -7,15 +7,22 @@ package db
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createApp = `-- name: CreateApp :one
-INSERT INTO apps (id) VALUES ($1)
+INSERT INTO apps (id, installed_at) VALUES ($1, $2)
 RETURNING id, installed_at
 `
 
-func (q *Queries) CreateApp(ctx context.Context, id string) (App, error) {
-	row := q.db.QueryRow(ctx, createApp, id)
+type CreateAppParams struct {
+	ID          string
+	InstalledAt pgtype.Timestamp
+}
+
+func (q *Queries) CreateApp(ctx context.Context, arg CreateAppParams) (App, error) {
+	row := q.db.QueryRow(ctx, createApp, arg.ID, arg.InstalledAt)
 	var i App
 	err := row.Scan(&i.ID, &i.InstalledAt)
 	return i, err

@@ -26,14 +26,14 @@ func (h *Handler) RegisterRoutes() *http.ServeMux {
 }
 
 func homePage(w http.ResponseWriter, r *http.Request) {
-	resp, err := http.Get("http://localhost:8080/api/apps")
+	resp, err := http.Get("http://localhost:8080/api/apps/list")
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error fetching apps: %s", err), http.StatusInternalServerError)
 		return
 	}
 	defer resp.Body.Close()
 
-	var list []*types.ApiAppResponse
+	var list []*types.ApiAppListResponse
 	if err := json.NewDecoder(resp.Body).Decode(&list); err != nil {
 		http.Error(w, fmt.Sprintf("Error decoding response: %s", err), http.StatusInternalServerError)
 		return
@@ -54,7 +54,7 @@ func homePage(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html")
 	data := struct {
 		Config types.Config
-		Apps   []*types.ApiAppResponse
+		Apps   []*types.ApiAppListResponse
 	}{
 		Config: utils.CachedConfig,
 		Apps:   list,

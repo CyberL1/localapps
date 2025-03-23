@@ -11,8 +11,16 @@ type Part struct {
 	Dev  string `yaml:"dev"`
 }
 
-type ApiAppResponse struct {
+type ApiAppListResponse struct {
 	Id          string `json:"id"`
 	Name        string `json:"name"`
 	InstalledAt string `json:"installedAt"`
+}
+
+type ApiAppInstallRequestBody struct {
+	Id string `json:"id"`
+}
+
+type ApiAppUninstallRequestBody struct {
+	Id string `json:"id"`
 }
