@@ -172,7 +172,7 @@ var upCmd = &cobra.Command{
 				return
 			}
 
-			_, err = client.UpdateConfigKey(dbClient.Ctx, db.UpdateConfigKeyParams{
+			_, err = client.UpdateConfigKey(context.Background(), db.UpdateConfigKeyParams{
 				Key:   "Domain",
 				Value: pgtype.Text{String: string(domainParsed), Valid: true},
 			})

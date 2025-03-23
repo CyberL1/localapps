@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"context"
 	"encoding/json"
 	dbClient "localapps/db/client"
 
@@ -20,7 +21,7 @@ func UpdateConfigCache() error {
 	}
 
 	client, _ := dbClient.GetClient()
-	config, err := client.GetConfig(dbClient.Ctx)
+	config, err := client.GetConfig(context.Background())
 	if err != nil {
 		return err
 	}
@@ -44,7 +45,7 @@ func UpdateConfigCache() error {
 
 func ValidateConfig() error {
 	client, _ := dbClient.GetClient()
-	config, err := client.GetConfig(dbClient.Ctx)
+	config, err := client.GetConfig(context.Background())
 	if err != nil {
 		return err
 	}
@@ -69,7 +70,7 @@ func ValidateConfig() error {
 		field, _ := reflect.TypeOf(types.Config{}).FieldByName(k)
 		defaultValue := field.Tag.Get("default")
 
-		client.SetConfigKey(dbClient.Ctx, db.SetConfigKeyParams{Key: k, Value: pgtype.Text{String: defaultValue, Valid: true}})
+		client.SetConfigKey(context.Background(), db.SetConfigKeyParams{Key: k, Value: pgtype.Text{String: defaultValue, Valid: true}})
 	}
 	return nil
 }

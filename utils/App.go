@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"localapps/constants"
@@ -11,7 +12,7 @@ import (
 
 func GetAppData(appId string) (*types.ApiAppListResponse, error) {
 	client, _ := dbClient.GetClient()
-	app, err := client.GetApp(dbClient.Ctx, appId)
+	app, err := client.GetApp(context.Background(), appId)
 
 	if err != nil {
 		return nil, fmt.Errorf("app \"%s\" not found", appId)

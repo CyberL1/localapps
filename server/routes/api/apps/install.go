@@ -1,6 +1,7 @@
 package appsApi
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -49,7 +50,7 @@ func installApp(w http.ResponseWriter, r *http.Request) {
 	}
 
 	client, _ := dbClient.GetClient()
-	appWithTheSameId, _ := client.GetApp(dbClient.Ctx, appId)
+	appWithTheSameId, _ := client.GetApp(context.Background(), appId)
 
 	if appWithTheSameId.ID == appId {
 		http.Error(w, "App already installed", http.StatusInternalServerError)
@@ -66,7 +67,7 @@ func installApp(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("Error marshaling map to JSON:", err)
 	}
 
-	_, err = client.CreateApp(dbClient.Ctx, db.CreateAppParams{
+	_, err = client.CreateApp(context.Background(), db.CreateAppParams{
 		ID:          appId,
 		InstalledAt: pgtype.Timestamp{Time: time.Now(), Valid: true},
 		Name:        appInfo.Name,

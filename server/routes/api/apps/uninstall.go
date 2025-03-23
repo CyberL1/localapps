@@ -1,6 +1,7 @@
 package appsApi
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	dbClient "localapps/db/client"
@@ -30,13 +31,13 @@ func uninstallApp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err := client.GetApp(dbClient.Ctx, appId)
+	_, err := client.GetApp(context.Background(), appId)
 	if err != nil {
 		http.Error(w, "App not installed", http.StatusInternalServerError)
 		return
 	}
 
-	err = client.DeleteApp(dbClient.Ctx, appId)
+	err = client.DeleteApp(context.Background(), appId)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error deleting app record from db: %s", err), http.StatusInternalServerError)
 		return

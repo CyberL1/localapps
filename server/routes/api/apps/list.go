@@ -1,6 +1,7 @@
 package appsApi
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	dbClient "localapps/db/client"
@@ -11,7 +12,7 @@ import (
 
 func getAppList(w http.ResponseWriter, r *http.Request) {
 	db, _ := dbClient.GetClient()
-	apps, err := db.ListApps(dbClient.Ctx)
+	apps, err := db.ListApps(context.Background())
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error fetching apps: %s", err), http.StatusInternalServerError)
 		return

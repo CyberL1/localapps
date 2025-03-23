@@ -12,7 +12,6 @@ import (
 )
 
 var client *db.Queries
-var Ctx context.Context
 
 func Migrate() {
 	if err := goose.SetDialect("postgres"); err != nil {
@@ -33,9 +32,7 @@ func Migrate() {
 
 func GetClient() (*db.Queries, error) {
 	if client == nil {
-		Ctx = context.Background()
-
-		conn, err := pgx.Connect(Ctx, os.Getenv("LOCALAPPS_DB"))
+		conn, err := pgx.Connect(context.Background(), os.Getenv("LOCALAPPS_DB"))
 		if err != nil {
 			return nil, err
 		}
