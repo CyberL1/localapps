@@ -1,5 +1,5 @@
 package types
 
 type Config struct {
-	Domain string `default:"\"localhost:8080\""`
+	Domain string `default:"\"apps.localhost:8080\""`
 }
