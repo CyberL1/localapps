@@ -1,5 +1,5 @@
 -- name: ListApps :many
-SELECT * FROM apps;
+SELECT * FROM apps ORDER BY installed_at;
 
 -- name: GetApp :one
 SELECT * FROM apps

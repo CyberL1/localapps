@@ -43,7 +43,7 @@ func (q *Queries) GetApp(ctx context.Context, id string) (App, error) {
 }
 
 const listApps = `-- name: ListApps :many
-SELECT id, installed_at FROM apps
+SELECT id, installed_at FROM apps ORDER BY installed_at
 `
 
 func (q *Queries) ListApps(ctx context.Context) ([]App, error) {
