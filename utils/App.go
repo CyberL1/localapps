@@ -1,0 +1,39 @@
+package utils
+
+import (
+	"encoding/json"
+	"fmt"
+	"localapps/constants"
+	dbClient "localapps/db/client"
+	"localapps/types"
+	"path/filepath"
+)
+
+func GetAppData(appId string) (*types.ApiAppListResponse, error) {
+	client, _ := dbClient.GetClient()
+	app, err := client.GetApp(dbClient.Ctx, appId)
+
+	if err != nil {
+		return nil, fmt.Errorf("app \"%s\" not found", appId)
+	}
+
+	var appTyped types.ApiAppListResponse
+	appBytes, err := json.Marshal(app)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal app: %v", err)
+	}
+	json.Unmarshal(appBytes, &appTyped)
+
+	var partsMap map[string]string
+	err = json.Unmarshal([]byte(app.Parts), &partsMap)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal app parts: %v", err)
+	}
+	
+	appTyped.Parts = partsMap
+	return &appTyped, nil
+}
+
+func GetAppStorage(appId string) string {
+	return filepath.Join(constants.LocalappsDir, "storage", appId)
+}

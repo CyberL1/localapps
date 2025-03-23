@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -30,11 +29,11 @@ func AppProxy(next http.Handler) http.Handler {
 		}
 
 		if len(strings.Split(r.Host, ".")) == len(strings.Split(utils.CachedConfig.Domain, "."))+1 {
-			appName := strings.Split(r.Host, ".")[0]
-			app, err := utils.GetApp(appName)
+			appId := strings.Split(r.Host, ".")[0]
 
+			appData, err := utils.GetAppData(appId)
 			if err != nil {
-				w.Write([]byte(fmt.Sprintf("App \"%s\" not found", appName)))
+				w.Write([]byte(err.Error()))
 				return
 			}
 
@@ -48,16 +47,10 @@ func AppProxy(next http.Handler) http.Handler {
 			var dockerImageName string
 			var fallbackPartName string
 
-			appId := strings.Split(r.Host, ".")[0]
-
-			for partName, part := range app.Parts {
-				if part.Path == "" {
-					fallbackPartName = partName
-				}
-
-				if strings.Split(r.URL.Path, "/")[1] == part.Path {
-					dockerAppName = "localapps-app-" + appId + "-" + partName
-					dockerImageName = "localapps/apps/" + appId + "/" + partName
+			for name, path := range appData.Parts {
+				if strings.HasPrefix(r.URL.Path, path) {
+					dockerAppName = "localapps-app-" + appId + "-" + name
+					dockerImageName = "localapps/apps/" + appId + "/" + name
 					break
 				} else {
 					dockerAppName = "localapps-app-" + appId + "-" + fallbackPartName
@@ -96,7 +89,7 @@ func AppProxy(next http.Handler) http.Handler {
 								HostPort: strconv.Itoa(freePort),
 							},
 						},
-					}, Binds: []string{fmt.Sprintf("%s:/storage", filepath.Join(utils.GetAppDirectory(appId), "storage"))},
+					}, Binds: []string{fmt.Sprintf("%s:/storage", utils.GetAppStorage(appId))},
 				}
 
 				appNameWithPart := strings.Replace(strings.TrimPrefix(dockerAppName, "localapps-app-"), "-", ":", 1)
@@ -105,7 +98,7 @@ func AppProxy(next http.Handler) http.Handler {
 				fmt.Println("[app:"+appNameWithPart+"]", "Got a http request while stopped - creating container")
 
 				if err := cli.ContainerStart(context.Background(), createdContainer.ID, container.StartOptions{}); err != nil {
-					w.Write([]byte(fmt.Sprintf("Failed to start app \"%s\": %s", appName, err)))
+					w.Write([]byte(fmt.Sprintf("Failed to start app \"%s\": %s", appId, err)))
 					return
 				}
 

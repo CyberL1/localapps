@@ -42,6 +42,5 @@ func GetClient() (*db.Queries, error) {
 
 		client = db.New(conn)
 	}
-
 	return client, nil
 }

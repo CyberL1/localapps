@@ -1,6 +1,7 @@
 package types
 
 type App struct {
+	Id    string          `yaml:"id"`
 	Name  string          `yaml:"name"`
 	Parts map[string]Part `yaml:"parts"`
 }
@@ -12,13 +13,14 @@ type Part struct {
 }
 
 type ApiAppListResponse struct {
-	Id          string `json:"id"`
-	Name        string `json:"name"`
-	InstalledAt string `json:"installedAt"`
+	Id          string            `json:"id"`
+	Name        string            `json:"name"`
+	InstalledAt string            `json:"installedAt"`
+	Parts       map[string]string `json:"parts"`
 }
 
 type ApiAppInstallRequestBody struct {
-	Id string `json:"id"`
+	File string `json:"file"`
 }
 
 type ApiAppUninstallRequestBody struct {

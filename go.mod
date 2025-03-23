@@ -4,7 +4,6 @@ go 1.23.5
 
 require (
 	github.com/docker/go-connections v0.5.0
-	github.com/go-yaml/yaml v2.1.0+incompatible
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx/v5 v5.7.2
 	github.com/pressly/goose/v3 v3.24.1
@@ -50,6 +49,7 @@ require (
 
 require (
 	github.com/docker/docker v28.0.1+incompatible
+	github.com/go-yaml/yaml v2.1.0+incompatible
 	github.com/golang-migrate/migrate/v4 v4.18.2
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.6 // indirect

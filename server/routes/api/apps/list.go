@@ -20,7 +20,7 @@ func getAppList(w http.ResponseWriter, r *http.Request) {
 	var list []types.ApiAppListResponse
 
 	for _, appData := range apps {
-		app, err := utils.GetApp(appData.ID)
+		app, err := utils.GetAppData(appData.ID)
 
 		if err != nil {
 			continue
@@ -30,6 +30,13 @@ func getAppList(w http.ResponseWriter, r *http.Request) {
 			Id:          appData.ID,
 			Name:        app.Name,
 			InstalledAt: appData.InstalledAt.Time.String(),
+			Parts: func() map[string]string {
+				var parts map[string]string
+				if err := json.Unmarshal(appData.Parts, &parts); err != nil {
+					parts = make(map[string]string) // default to empty map on error
+				}
+				return parts
+			}(),
 		})
 	}
 

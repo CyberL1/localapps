@@ -11,6 +11,8 @@ import (
 type App struct {
 	ID          string
 	InstalledAt pgtype.Timestamp
+	Name        string
+	Parts       []byte
 }
 
 type Config struct {

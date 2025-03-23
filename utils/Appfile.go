@@ -3,20 +3,18 @@ package utils
 import (
 	"fmt"
 	"io"
-	"localapps/constants"
 	"localapps/types"
 	"os"
-	"path/filepath"
 
 	"github.com/go-yaml/yaml"
 )
 
-func GetApp(appId string) (*types.App, error) {
-	appFilePath := filepath.Join(constants.LocalappsDir, "apps", appId, "app.yml")
+func GetAppInfo() (*types.App, error) {
+	appFilePath := "app.yml"
 
 	file, err := os.Open(appFilePath)
 	if err != nil {
-		return nil, fmt.Errorf("app \"%s\" not found", appId)
+		return nil, fmt.Errorf("app.yml not found")
 	}
 
 	defer file.Close()
@@ -32,8 +30,4 @@ func GetApp(appId string) (*types.App, error) {
 	}
 
 	return &app, nil
-}
-
-func GetAppDirectory(appId string) string {
-	return filepath.Join(constants.LocalappsDir, "apps", appId)
 }
