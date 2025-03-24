@@ -88,7 +88,7 @@ func AppProxy(next http.Handler) http.Handler {
 
 				hostConfig := container.HostConfig{
 					AutoRemove: true,
-					Mounts:     []mount.Mount{{Type: mount.TypeVolume, Source: "localapps-storage-app-" + appId, Target: "/storage"}},
+					Mounts:     []mount.Mount{{Type: mount.TypeVolume, Source: "localapps-storage-" + appId, Target: "/storage"}},
 					PortBindings: nat.PortMap{
 						"80": {
 							{
