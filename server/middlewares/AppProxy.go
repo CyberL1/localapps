@@ -49,8 +49,6 @@ func AppProxy(next http.Handler) http.Handler {
 
 			for name, path := range appData.Parts {
 				if strings.Split(r.URL.Path, "/")[1] == path {
-					fmt.Println(path)
-
 					dockerAppName = "localapps-app-" + appId + "-" + name
 					dockerImageName = "localapps/apps/" + appId + "/" + name
 					break
