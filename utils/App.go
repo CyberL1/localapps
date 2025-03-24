@@ -30,7 +30,7 @@ func GetAppData(appId string) (*types.ApiAppListResponse, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal app parts: %v", err)
 	}
-	
+
 	appTyped.Parts = partsMap
 	return &appTyped, nil
 }

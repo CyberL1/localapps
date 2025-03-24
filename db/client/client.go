@@ -11,8 +11,6 @@ import (
 	"github.com/pressly/goose/v3"
 )
 
-var client *db.Queries
-
 func Migrate() {
 	if err := goose.SetDialect("postgres"); err != nil {
 		fmt.Println(err)
@@ -31,13 +29,11 @@ func Migrate() {
 }
 
 func GetClient() (*db.Queries, error) {
-	if client == nil {
-		conn, err := pgx.Connect(context.Background(), os.Getenv("LOCALAPPS_DB"))
-		if err != nil {
-			return nil, err
-		}
-
-		client = db.New(conn)
+	conn, err := pgx.Connect(context.Background(), os.Getenv("LOCALAPPS_DB"))
+	if err != nil {
+		return nil, err
 	}
+
+	client := db.New(conn)
 	return client, nil
 }
