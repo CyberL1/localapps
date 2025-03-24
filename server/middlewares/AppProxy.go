@@ -13,6 +13,7 @@ import (
 
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
+	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
 )
@@ -87,6 +88,7 @@ func AppProxy(next http.Handler) http.Handler {
 
 				hostConfig := container.HostConfig{
 					AutoRemove: true,
+					Mounts:     []mount.Mount{{Type: mount.TypeVolume, Source: "localapps-storage-app-" + appId, Target: "/storage"}},
 					PortBindings: nat.PortMap{
 						"80": {
 							{
@@ -94,7 +96,7 @@ func AppProxy(next http.Handler) http.Handler {
 								HostPort: strconv.Itoa(freePort),
 							},
 						},
-					}, Binds: []string{fmt.Sprintf("%s:/storage", utils.GetAppStorage(appId))},
+					},
 				}
 
 				appNameWithPart := strings.Replace(strings.TrimPrefix(dockerAppName, "localapps-app-"), "-", ":", 1)

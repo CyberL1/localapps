@@ -4,10 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"localapps/constants"
 	dbClient "localapps/db/client"
 	"localapps/types"
-	"path/filepath"
 )
 
 func GetAppData(appId string) (*types.ApiAppListResponse, error) {
@@ -33,8 +31,4 @@ func GetAppData(appId string) (*types.ApiAppListResponse, error) {
 
 	appTyped.Parts = partsMap
 	return &appTyped, nil
-}
-
-func GetAppStorage(appId string) string {
-	return filepath.Join(constants.LocalappsDir, "storage", appId)
 }
