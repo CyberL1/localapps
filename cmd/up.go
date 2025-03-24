@@ -112,6 +112,7 @@ var upCmd = &cobra.Command{
 				},
 			},
 			Binds: []string{fmt.Sprintf("%s:/var/lib/postgresql/data", filepath.Join(constants.LocalappsDir, "data"))},
+			AutoRemove: true,
 		}
 
 		databaseContainer, err := cli.ContainerCreate(context.Background(), &config, &hostConfig, nil, nil, "localapps-database")
@@ -210,9 +211,9 @@ var upCmd = &cobra.Command{
 		go func() {
 			<-stop
 
-			cmd.Println("Removing database container")
+			cmd.Println("Stopping database container")
 			if err := cli.ContainerRemove(context.Background(), databaseContainer.ID, container.RemoveOptions{Force: true}); err != nil {
-				cmd.Printf("Failed to remove database container: %s\n", err)
+				cmd.Printf("Failed to stop database container: %s\n", err)
 			}
 			os.Exit(0)
 		}()

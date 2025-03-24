@@ -86,6 +86,7 @@ func AppProxy(next http.Handler) http.Handler {
 				}
 
 				hostConfig := container.HostConfig{
+					AutoRemove: true,
 					PortBindings: nat.PortMap{
 						"80": {
 							{
@@ -109,10 +110,8 @@ func AppProxy(next http.Handler) http.Handler {
 				go func() {
 					time.Sleep(30 * time.Second)
 
-					fmt.Println("[app:"+appNameWithPart+"]", "Exceeded timeout (30s) - removing container")
-					cli.ContainerRemove(context.Background(), createdContainer.ID, container.RemoveOptions{
-						Force: true,
-					})
+					fmt.Println("[app:"+appNameWithPart+"]", "Exceeded timeout (30s) - stopping container")
+					cli.ContainerStop(context.Background(), createdContainer.ID, container.StopOptions{})
 				}()
 			}
 
