@@ -27,19 +27,41 @@
       border-radius: 10px;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
       padding: 20px;
-      text-align: center;
-      transition: transform 0.3s ease, box-shadow 0.3s ease;
       user-select: none;
       height: 80px;
       width: 92px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+    }
+
+    .app>.content {
+      position: relative;
+      bottom: 5px;
+    }
+
+    .app>.content>.top {
+      position: relative;
+    }
+
+    .app>.content>.top>.menu-opener {
+      margin-left: 90px;
+      border-radius: 50px;
+      border-color: #419fff;
+      font-size: 14px;
+      width: 25px;
+      height: 25px;
+    }
+
+    .app>.content>.info {
       text-decoration: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
 
-    .apps>.app>#icon {
-      width: 60px;
-    }
-
-    .apps>.app>.info>#name {
+    .apps>.app>.content>.info>.name {
       font-size: 1.2em;
       display: block;
       text-decoration: none;
@@ -47,10 +69,33 @@
       overflow: hidden;
       text-overflow: ellipsis;
       height: 20px;
+      width: 92px;
     }
 
-    .apps>.app:hover>.info>#name {
+    .apps>.app>.content>.info:hover>.name {
       color: green;
+    }
+
+    .menu {
+      position: absolute;
+      background: white;
+      border: 1px solid #ccc;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      min-width: 150px;
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      border-radius: 8px;
+      user-select: none;
+    }
+
+    .menu>.item {
+      cursor: pointer;
+      display: flex;
+    }
+
+    .menu>.item:hover {
+      background-color: lightgrey;
     }
   </style>
 </head>
@@ -58,14 +103,76 @@
 <body>
   <main class="apps">
     {{range .Apps}}
-    <a class="app" href="//{{.Id}}.{{$.Config.Domain}}" target="_blank">
-      <img id="icon" src="https://fav.farm/fire" />
-      <div class="info">
-        <span id="name">{{.Name}}</span>
+    <div class="app" id="{{.Id}}">
+      <div class="content">
+        <div class="top">
+          <button class="menu-opener">+</button>
+        </div>
+        <a class="info" href="//{{.Id}}.{{$.Config.Domain}}" target="_blank">
+          <img src="https://fav.farm/fire" />
+          <span class="name">{{.Name}}</span>
+        </a>
       </div>
-    </a>
+    </div>
     {{end}}
   </main>
 </body>
+
+<script>
+  document.querySelectorAll(".apps .app .content .top .menu-opener").forEach(opener => {
+    opener.addEventListener("click", (event) => {
+      const app = event.target.parentElement.parentElement.parentElement;
+
+      const menuElements = [
+        { id: "open", text: "Open", action: e => window.open(`//${app.id}.${location.host}`, "_blank") },
+        {
+          id: "uninstall", text: "Uninstall", action: async e => {
+            if (confirm("Are you sure?")) {
+              const req = await fetch("/api/apps/uninstall", { method: "PUT", body: JSON.stringify({ id: app.id }) });
+
+              if (req.ok) {
+                app.remove();
+              }
+            }
+          }
+        }
+      ]
+
+      const existingMenu = document.querySelector(".menu");
+
+      if (existingMenu) {
+        existingMenu.remove();
+      }
+
+      const menu = document.createElement("div");
+      menu.classList.add("menu");
+
+      menu.style.top = `${event.target.getBoundingClientRect().bottom + window.scrollY}px`;
+      menu.style.left = `${event.clientX}px`;
+
+      for (const element of menuElements) {
+        const item = document.createElement("span");
+        item.classList.add("item");
+
+        item.textContent = element.text;
+        item.onclick = element.action;
+        item.id = element.id;
+
+        menu.appendChild(item);
+      }
+
+      document.body.appendChild(menu);
+
+      // Close menu when clicking on an item or ouside
+      const closeMenu = (e) => {
+        if (e.target !== event.target) {
+          menu.remove();
+          document.removeEventListener("click", closeMenu);
+        }
+      };
+      document.addEventListener("click", closeMenu);
+    });
+  });
+</script>
 
 </html>
