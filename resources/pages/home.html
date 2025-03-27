@@ -41,10 +41,6 @@
       bottom: 5px;
     }
 
-    .app>.content>.top {
-      position: relative;
-    }
-
     .app>.content>.top>.menu-opener {
       margin-left: 90px;
       border-radius: 50px;
@@ -61,13 +57,18 @@
       align-items: center;
     }
 
+    .apps>.app>.content>.info>.icon {
+      width: 70px;
+      height: 60px;
+    }
+
     .apps>.app>.content>.info>.name {
       font-size: 1.2em;
       display: block;
-      text-decoration: none;
       color: #333;
       overflow: hidden;
       text-overflow: ellipsis;
+      text-wrap: nowrap;
       height: 20px;
       width: 92px;
     }
@@ -109,7 +110,7 @@
           <button class="menu-opener">+</button>
         </div>
         <a class="info" href="//{{.Id}}.{{$.Config.Domain}}" target="_blank">
-          <img src="https://fav.farm/fire" />
+          <img class="icon" src="https://placehold.co/70x60" />
           <span class="name">{{.Name}}</span>
         </a>
       </div>
