@@ -43,10 +43,17 @@ var buildCmd = &cobra.Command{
 			cmd.PrintErrf("failed to parse app file: %v\n", err)
 		}
 
+		var appId string
+		if app.Id != "" {
+			appId = app.Id
+		} else {
+			appId = strings.ToLower(strings.ReplaceAll(app.Name, " ", "-"))
+		}
+
 		cmd.Println("Building " + app.Name)
 
 		for partName, part := range app.Parts {
-			buildCmd := exec.Command("docker", "build", "-t", "localapps/apps/"+strings.Split(file.Name(), "/")[len(strings.Split(file.Name(), "/"))-2]+"/"+partName, part.Src)
+			buildCmd := exec.Command("docker", "build", "-t", "localapps/apps/"+appId+"/"+partName, part.Src)
 
 			buildCmd.Stdout = os.Stdout
 			buildCmd.Stderr = os.Stderr
