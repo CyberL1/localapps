@@ -12,8 +12,8 @@ import (
 )
 
 const createApp = `-- name: CreateApp :one
-INSERT INTO apps (id, installed_at, name, parts) VALUES ($1, $2, $3, $4)
-RETURNING id, installed_at, name, parts
+INSERT INTO apps (id, installed_at, name, parts, icon) VALUES ($1, $2, $3, $4, $5)
+RETURNING id, installed_at, name, parts, icon
 `
 
 type CreateAppParams struct {
@@ -21,6 +21,7 @@ type CreateAppParams struct {
 	InstalledAt pgtype.Timestamp
 	Name        string
 	Parts       []byte
+	Icon        string
 }
 
 func (q *Queries) CreateApp(ctx context.Context, arg CreateAppParams) (App, error) {
@@ -29,6 +30,7 @@ func (q *Queries) CreateApp(ctx context.Context, arg CreateAppParams) (App, erro
 		arg.InstalledAt,
 		arg.Name,
 		arg.Parts,
+		arg.Icon,
 	)
 	var i App
 	err := row.Scan(
@@ -36,6 +38,7 @@ func (q *Queries) CreateApp(ctx context.Context, arg CreateAppParams) (App, erro
 		&i.InstalledAt,
 		&i.Name,
 		&i.Parts,
+		&i.Icon,
 	)
 	return i, err
 }
@@ -50,7 +53,7 @@ func (q *Queries) DeleteApp(ctx context.Context, id string) error {
 }
 
 const getApp = `-- name: GetApp :one
-SELECT id, installed_at, name, parts FROM apps WHERE id = $1
+SELECT id, installed_at, name, parts, icon FROM apps WHERE id = $1
 `
 
 func (q *Queries) GetApp(ctx context.Context, id string) (App, error) {
@@ -61,12 +64,13 @@ func (q *Queries) GetApp(ctx context.Context, id string) (App, error) {
 		&i.InstalledAt,
 		&i.Name,
 		&i.Parts,
+		&i.Icon,
 	)
 	return i, err
 }
 
 const listApps = `-- name: ListApps :many
-SELECT id, installed_at, name, parts FROM apps ORDER BY installed_at
+SELECT id, installed_at, name, parts, icon FROM apps ORDER BY installed_at
 `
 
 func (q *Queries) ListApps(ctx context.Context) ([]App, error) {
@@ -83,6 +87,7 @@ func (q *Queries) ListApps(ctx context.Context) ([]App, error) {
 			&i.InstalledAt,
 			&i.Name,
 			&i.Parts,
+			&i.Icon,
 		); err != nil {
 			return nil, err
 		}

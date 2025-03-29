@@ -58,7 +58,7 @@
     }
 
     .apps>.app>.content>.info>.icon {
-      width: 70px;
+      width: 60px;
       height: 60px;
     }
 
@@ -110,7 +110,11 @@
           <button class="menu-opener">+</button>
         </div>
         <a class="info" href="//{{.Id}}.{{$.Config.Domain}}" target="_blank">
-          <img class="icon" src="https://placehold.co/70x60" />
+          {{if .Icon}}
+          <img class="icon" src="{{.Icon}}" />
+          {{else}}
+          <img class="icon" src="https://placehold.co/60" />
+          {{end}}
           <span class="name">{{.Name}}</span>
         </a>
       </div>

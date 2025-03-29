@@ -30,6 +30,7 @@ func getAppList(w http.ResponseWriter, r *http.Request) {
 		list = append(list, types.ApiAppListResponse{
 			Id:          appData.ID,
 			Name:        app.Name,
+			Icon:        app.Icon,
 			InstalledAt: appData.InstalledAt.Time.String(),
 			Parts: func() map[string]string {
 				var parts map[string]string

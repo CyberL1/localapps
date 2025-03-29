@@ -13,6 +13,7 @@ type App struct {
 	InstalledAt pgtype.Timestamp
 	Name        string
 	Parts       []byte
+	Icon        string
 }
 
 type Config struct {
