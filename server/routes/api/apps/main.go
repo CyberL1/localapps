@@ -1,8 +1,6 @@
 package appsApi
 
-import (
-	"net/http"
-)
+import "net/http"
 
 type Handler struct{}
 
@@ -13,9 +11,9 @@ func NewHandler() *Handler {
 func (h *Handler) RegisterRoutes() *http.ServeMux {
 	r := http.NewServeMux()
 
-	r.HandleFunc("GET /list", getAppList)
-	r.HandleFunc("PUT /install", installApp)
-	r.HandleFunc("PUT /uninstall", uninstallApp)
+	r.HandleFunc("GET /", getAppList)
+	r.HandleFunc("POST /", installApp)
+	r.HandleFunc("DELETE /{appId}", uninstallApp)
 
 	return r
 }

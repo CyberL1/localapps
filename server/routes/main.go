@@ -26,14 +26,21 @@ func (h *Handler) RegisterRoutes() *http.ServeMux {
 }
 
 func homePage(w http.ResponseWriter, r *http.Request) {
-	resp, err := http.Get("http://localhost:8080/api/apps/list")
+	req, err := http.NewRequest("GET", "http://localhost:8080/api/apps/", nil)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Error creating request: %s", err), http.StatusInternalServerError)
+		return
+	}
+	req.Header.Add("Authorization", utils.CachedConfig.ApiKey)
+
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error fetching apps: %s", err), http.StatusInternalServerError)
 		return
 	}
 	defer resp.Body.Close()
 
-	var list []*types.ApiAppListResponse
+	var list []*types.ApiAppResponse
 	if err := json.NewDecoder(resp.Body).Decode(&list); err != nil {
 		http.Error(w, fmt.Sprintf("Error decoding response: %s", err), http.StatusInternalServerError)
 		return
@@ -54,7 +61,7 @@ func homePage(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html")
 	data := struct {
 		Config types.Config
-		Apps   []*types.ApiAppListResponse
+		Apps   []*types.ApiAppResponse
 	}{
 		Config: utils.CachedConfig,
 		Apps:   list,

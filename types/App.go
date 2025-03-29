@@ -13,7 +13,12 @@ type Part struct {
 	Dev  string `yaml:"dev"`
 }
 
-type ApiAppListResponse struct {
+type ApiError struct {
+	Code    string `json:"code"`
+	Message string `json:"message"`
+}
+
+type ApiAppResponse struct {
 	Id          string            `json:"id"`
 	Name        string            `json:"name"`
 	Icon        string            `json:"icon"`

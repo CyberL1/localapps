@@ -111,7 +111,7 @@ var upCmd = &cobra.Command{
 					},
 				},
 			},
-			Binds: []string{fmt.Sprintf("%s:/var/lib/postgresql/data", filepath.Join(constants.LocalappsDir, "data"))},
+			Binds:      []string{fmt.Sprintf("%s:/var/lib/postgresql/data", filepath.Join(constants.LocalappsDir, "data"))},
 			AutoRemove: true,
 		}
 
@@ -195,15 +195,37 @@ var upCmd = &cobra.Command{
 			}
 		}
 
+		if utils.CachedConfig.ApiKey == "" {
+			fmt.Println("Server API Key is empty, using a random value")
+			client, _ := dbClient.GetClient()
+
+			apiKeyParsed, err := json.Marshal(strings.ReplaceAll(uuid.NewString(), "-", ""))
+			if err != nil {
+				fmt.Printf("Error parsing api key: %s\n", err)
+				return
+			}
+
+			_, err = client.UpdateConfigKey(context.Background(), db.UpdateConfigKeyParams{
+				Key:   "ApiKey",
+				Value: pgtype.Text{String: string(apiKeyParsed), Valid: true},
+			})
+			if err != nil {
+				fmt.Printf("Error updating domain: %s\n", err)
+			}
+
+			err = utils.UpdateConfigCache()
+			if err != nil {
+				fmt.Printf("Error updating config cache: %s\n", err)
+				return
+			}
+		}
+
 		cmd.Println("Starting HTTP server")
 
 		router := http.NewServeMux()
 
-		homeHandler := routes.NewHandler().RegisterRoutes()
-		router.Handle("/", homeHandler)
-
-		apiHandler := api.NewHandler().RegisterRoutes()
-		router.Handle("/api/", http.StripPrefix("/api", apiHandler))
+		router.Handle("/", routes.NewHandler().RegisterRoutes())
+		router.Handle("/api/", http.StripPrefix("/api", api.NewHandler().RegisterRoutes()))
 
 		// Exit handler
 		stop := make(chan os.Signal, 1)

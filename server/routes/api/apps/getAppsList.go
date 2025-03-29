@@ -18,7 +18,7 @@ func getAppList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var list []types.ApiAppListResponse
+	var list []types.ApiAppResponse
 
 	for _, appData := range apps {
 		app, err := utils.GetAppData(appData.ID)
@@ -27,7 +27,7 @@ func getAppList(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
-		list = append(list, types.ApiAppListResponse{
+		list = append(list, types.ApiAppResponse{
 			Id:          appData.ID,
 			Name:        app.Name,
 			Icon:        app.Icon,

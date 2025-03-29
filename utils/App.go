@@ -8,7 +8,7 @@ import (
 	"localapps/types"
 )
 
-func GetAppData(appId string) (*types.ApiAppListResponse, error) {
+func GetAppData(appId string) (*types.ApiAppResponse, error) {
 	client, _ := dbClient.GetClient()
 	app, err := client.GetApp(context.Background(), appId)
 
@@ -16,7 +16,7 @@ func GetAppData(appId string) (*types.ApiAppListResponse, error) {
 		return nil, fmt.Errorf("app \"%s\" not found", appId)
 	}
 
-	var appTyped types.ApiAppListResponse
+	var appTyped types.ApiAppResponse
 	appBytes, err := json.Marshal(app)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal app: %v", err)
