@@ -29,7 +29,3 @@ type ApiAppResponse struct {
 type ApiAppInstallRequestBody struct {
 	File string `json:"file"`
 }
-
-type ApiAppUninstallRequestBody struct {
-	Id string `json:"id"`
-}
