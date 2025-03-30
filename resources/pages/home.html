@@ -133,7 +133,7 @@
         {
           id: "uninstall", text: "Uninstall", action: async e => {
             if (confirm("Are you sure?")) {
-              const req = await fetch("/api/apps/uninstall", { method: "PUT", body: JSON.stringify({ id: app.id }) });
+              const req = await fetch(`/api/apps/${app.id}`, { method: "DELETE", headers: { Authorization: "{{.Config.ApiKey}}" } });
 
               if (req.ok) {
                 app.remove();
