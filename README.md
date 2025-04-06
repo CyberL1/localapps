@@ -19,13 +19,13 @@ Linux:
 
 ## Usage
 
-1. Get [caddy](https://caddyserver.com)
-2. Paste this config:
-  ```
-  apps.localhost, *.apps.localhost {
-    reverse_proxy http://localhost:8080
-  }
-  ```
+### Locally
 
-3. Do `localapps up`
-4. Go to `apps.localhost` and you're good to go
+1. Do `localapps up`
+2. Go to `apps.localhost:8080` and you're good to go
+
+### Remote (VPS)
+
+1. Create `domain.txt` file using `echo "domain.tld" > ~/.config/localapps/domain.txt`
+2. Do `localapps up`
+3. Go to the domain you set to access localapps
