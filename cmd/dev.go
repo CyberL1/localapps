@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"localapps/types"
@@ -9,12 +10,18 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"os"
-	"os/exec"
+	"os/signal"
 	"path/filepath"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 
+	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/filters"
+	"github.com/docker/docker/api/types/mount"
+	"github.com/docker/docker/client"
+	"github.com/docker/go-connections/nat"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
 )
@@ -50,92 +57,135 @@ var devCmd = &cobra.Command{
 			cmd.PrintErrf("failed to parse app file: %v\n", err)
 		}
 
-		for partName, part := range app.Parts {
-			if strings.TrimSpace(part.Dev) == "" {
-				println("Part", partName, "has no dev command")
-				os.Exit(1)
-			}
+		cmd.Println("Running app in development mode")
+		cli, err := client.NewClientWithOpts(client.FromEnv)
+		if err != nil {
+			fmt.Println([]byte(fmt.Sprintf("Failed to connect to Docker daemon: %s", err)))
+			return
 		}
 
-		cmd.Println("Running app in dev mode")
-
 		http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-			var currentPart types.Part
-			var fallbackPart types.Part
+			var appId string
+			if app.Id != "" {
+				appId = app.Id
+			} else {
+				appId = strings.ToLower(strings.ReplaceAll(app.Name, " ", "-"))
+			}
 
-			for _, part := range app.Parts {
+			var dockerAppName string
+			var dockerImageName string
+
+			var currentPartSource string
+			var fallbackPartSource string
+
+			var fallbackPartName string
+
+			for name, part := range app.Parts {
 				if part.Path == "" {
-					fallbackPart = part
+					fallbackPartName = name
+					fallbackPartSource = part.Src
 				}
 
 				if strings.Split(r.URL.Path, "/")[1] == part.Path {
-					currentPart = part
+					dockerAppName = "localapps-app-" + appId + "-" + name
+					dockerImageName = "localapps/apps/" + appId + "/" + name
+					currentPartSource = part.Src
 					break
 				} else {
-					currentPart = fallbackPart
+					dockerAppName = "localapps-app-" + appId + "-" + fallbackPartName
+					dockerImageName = "localapps/apps/" + appId + "/" + fallbackPartName
+					currentPartSource = fallbackPartSource
 				}
 			}
 
-			findProcess := exec.Command("pgrep", "-f", currentPart.Dev)
-
-			out, _ := findProcess.Output()
-			splitted := strings.Split(string(out), "\n")
+			containersByName, _ := cli.ContainerList(context.Background(), container.ListOptions{
+				Filters: filters.NewArgs(
+					filters.Arg("name", dockerAppName),
+				),
+			})
 
 			var freePort int
-			var isRunning bool
+			if len(containersByName) > 0 {
+				appContainer := containersByName[0]
 
-			for _, pid := range splitted {
-				getDirectory := exec.Command("readlink", fmt.Sprintf("/proc/%s/cwd", string(pid)))
-				out, _ = getDirectory.Output()
-
-				if strings.TrimSpace(string(out)) == filepath.Join(currentDir, currentPart.Src) {
-					isRunning = true
-					findPort := exec.Command("cat", fmt.Sprintf("/proc/%s/environ", string(pid)))
-					out, _ = findPort.Output()
-
-					splitted := strings.Split(string(out), "\x00")
-
-					for _, env := range splitted {
-						if strings.HasPrefix(env, "PORT=") {
-							freePort, _ = strconv.Atoi(strings.Split(env, "=")[1])
-							break
-						}
-					}
-				}
-			}
-
-			if !isRunning {
+				containerPort := appContainer.Ports[0].PublicPort
+				freePort = int(containerPort)
+			} else {
 				freePort, _ = utils.GetFreePort()
 
-				cmd := exec.Command("/bin/sh", "-c", currentPart.Dev)
-				cmd.Dir = currentPart.Src
-
-				cmd.Env = append(cmd.Env, "PATH="+os.Getenv("PATH"))
-				cmd.Env = append(cmd.Env, fmt.Sprintf("PORT=%s", strconv.Itoa(freePort)))
-
-				cmd.Stdout = os.Stdout
-				cmd.Stderr = os.Stderr
-
-				if err := cmd.Start(); err != nil {
-					w.Write([]byte(fmt.Sprintf("Failed to start app \"%s\": %s", app.Name, err)))
-					return
+				config := container.Config{
+					Image: dockerImageName,
+					Env:   []string{"PORT=80"},
+					ExposedPorts: nat.PortSet{
+						"80": struct{}{},
+					},
 				}
 
-				// Wait for the app to be ready
-				for {
-					_, err := http.Get(fmt.Sprintf("http://localhost:%s", strconv.Itoa(freePort)))
-					if err == nil {
-						break
-					}
-					time.Sleep(500 * time.Millisecond)
+				hostConfig := container.HostConfig{
+					AutoRemove: true,
+					Mounts: []mount.Mount{{Type: mount.TypeVolume, Source: "localapps-storage-" + appId, Target: "/storage"},
+						{Type: mount.TypeBind, Source: filepath.Join(currentDir, currentPartSource), Target: "/app"}},
+					PortBindings: nat.PortMap{
+						"80": {
+							{
+								HostIP:   "0.0.0.0",
+								HostPort: strconv.Itoa(freePort),
+							},
+						},
+					},
+				}
+
+				createdContainer, _ := cli.ContainerCreate(context.Background(), &config, &hostConfig, nil, nil, dockerAppName)
+
+				if err := cli.ContainerStart(context.Background(), createdContainer.ID, container.StartOptions{}); err != nil {
+					w.Write([]byte(fmt.Sprintf("Failed to start app \"%s\": %s", appId, err)))
+					return
 				}
 			}
 
-			appUrl, _ := url.Parse(fmt.Sprintf("http://localhost:%s", strconv.Itoa(freePort)))
+			// Wait for the app to be ready
+			for {
+				_, err := http.Get(fmt.Sprintf("http://localhost:%d", freePort))
+				if err == nil {
+					break
+				}
+				time.Sleep(500 * time.Millisecond)
+			}
+
+			appUrl, _ := url.Parse(fmt.Sprintf("http://localhost:%d", freePort))
 			httputil.NewSingleHostReverseProxy(appUrl).ServeHTTP(w, r)
 		})
 
-		cmd.Println("Your app is ready on", fmt.Sprintf("https://%s.apps.localhost", strings.Split(currentDir, "/")[4]))
-		http.ListenAndServe(":8080", nil)
+		// Exit handler
+		stop := make(chan os.Signal, 1)
+		signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
+		go func() {
+			<-stop
+
+			cmd.Println("Stopping development containers")
+
+			containers, err := cli.ContainerList(context.Background(), container.ListOptions{})
+			if err != nil {
+				cmd.Printf("Failed to list containers: %s\n", err)
+				return
+			}
+
+			for _, c := range containers {
+				if strings.HasPrefix(c.Names[0], "/localapps-app-") {
+					if err := cli.ContainerRemove(context.Background(), c.ID, container.RemoveOptions{Force: true}); err != nil {
+						cmd.Printf("Failed to stop development container: %s\n", err)
+						break
+					}
+				}
+
+			}
+			os.Exit(0)
+		}()
+
+		cmd.Println("Your app is ready on http://localhost:8080")
+		if err := http.ListenAndServe(":8080", nil); err != nil {
+			fmt.Printf("Failed to bind to port 8080: %s\n", err)
+			os.Exit(1)
+		}
 	},
 }

@@ -37,7 +37,6 @@ func installApp(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var appId string
-
 	if appInfo.Id != "" {
 		appId = appInfo.Id
 	} else {

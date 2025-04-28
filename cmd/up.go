@@ -43,6 +43,14 @@ var upCmd = &cobra.Command{
 	Short: "Start localapps server",
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
+		// Check for all required resources
+		if _, err := os.Stat(constants.LocalappsDir); os.IsNotExist(err) {
+			if err := os.Mkdir(constants.LocalappsDir, os.ModePerm); err != nil {
+				fmt.Println("Failed to create ~/.config/localapps directory:", err)
+				return
+			}
+		}
+
 		cmd.Println("Creating database server container")
 		freePort, _ := utils.GetFreePort()
 
