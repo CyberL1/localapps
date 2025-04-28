@@ -16,7 +16,7 @@ func NewHandler() *Handler {
 func (h *Handler) RegisterRoutes() *http.ServeMux {
 	r := http.NewServeMux()
 
-	r.Handle("/admin/", http.StripPrefix("/admin", adminApi.NewHandler().RegisterRoutes()))
+	r.Handle("/admin/", http.StripPrefix("/admin", middlewares.ApiAuth(adminApi.NewHandler().RegisterRoutes())))
 	r.Handle("/apps/", http.StripPrefix("/apps", middlewares.ApiAuth(appsApi.NewHandler().RegisterRoutes())))
 
 	return r
