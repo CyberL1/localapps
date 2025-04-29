@@ -66,9 +66,16 @@ var devCmd = &cobra.Command{
 		}
 
 		for partName, part := range app.Parts {
+			dockerfileVariant := "Dockerfile.dev"
+
+			if _, err := os.Stat(part.Src + "/Dockerfile.dev"); os.IsNotExist(err) {
+				println("⚠ Part", partName, "has no Dockerfile.dev file, using Dockerfile instead")
+				dockerfileVariant = "Dockerfile"
+			}
+
 			fmt.Println("Building " + partName)
 
-			buildCmd := exec.Command("docker", "build", "-t", "localapps/apps/"+appId+"/"+partName, part.Src)
+			buildCmd := exec.Command("docker", "build", "-t", "localapps/apps/"+appId+"/"+partName, part.Src, "-f", part.Src+"/"+dockerfileVariant)
 
 			buildCmd.Stdout = os.Stdout
 			buildCmd.Stderr = os.Stderr
