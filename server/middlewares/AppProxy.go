@@ -110,9 +110,9 @@ func AppProxy(next http.Handler) http.Handler {
 				}
 
 				go func() {
-					time.Sleep(30 * time.Second)
+					time.Sleep(20 * time.Second)
 
-					fmt.Println("[app:"+appNameWithPart+"]", "Exceeded timeout (30s) - stopping container")
+					fmt.Println("[app:"+appNameWithPart+"]", "Exceeded timeout (20s) - stopping container")
 					cli.ContainerStop(context.Background(), createdContainer.ID, container.StopOptions{})
 				}()
 			}
