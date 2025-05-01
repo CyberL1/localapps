@@ -1,9 +1,11 @@
 package cmd
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
+	"localapps/resources"
 	"localapps/types"
 	"localapps/utils"
 	"net/http"
@@ -16,12 +18,14 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
+	"text/template"
 	"time"
 
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/client"
+	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/docker/go-connections/nat"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
@@ -33,7 +37,7 @@ func init() {
 
 var devCmd = &cobra.Command{
 	Use:   "dev",
-	Short: "Start localapps server",
+	Short: "Run your app locally in an emulated environment",
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
 		currentDir, _ := os.Getwd()
@@ -56,6 +60,14 @@ var devCmd = &cobra.Command{
 		err = yaml.Unmarshal(appFileContents, &app)
 		if err != nil {
 			cmd.PrintErrf("failed to parse app file: %v\n", err)
+		}
+
+		cli, _ := client.NewClientWithOpts(client.FromEnv)
+
+		_, err = cli.Ping(context.Background())
+		if err != nil {
+			fmt.Println("Failed to connect to Docker daemon. Is it running?")
+			return
 		}
 
 		var appId string
@@ -81,13 +93,6 @@ var devCmd = &cobra.Command{
 			buildCmd.Stderr = os.Stderr
 
 			buildCmd.Run()
-		}
-
-		cmd.Println("Running app in development mode")
-		cli, err := client.NewClientWithOpts(client.FromEnv)
-		if err != nil {
-			fmt.Println([]byte(fmt.Sprintf("Failed to connect to Docker daemon: %s", err)))
-			return
 		}
 
 		http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -141,7 +146,6 @@ var devCmd = &cobra.Command{
 				}
 
 				hostConfig := container.HostConfig{
-					AutoRemove: true,
 					Mounts: []mount.Mount{{Type: mount.TypeVolume, Source: "localapps-storage-" + appId, Target: "/storage"},
 						{Type: mount.TypeBind, Source: filepath.Join(currentDir, currentPartSource), Target: "/app"}},
 					PortBindings: nat.PortMap{
@@ -163,16 +167,56 @@ var devCmd = &cobra.Command{
 			}
 
 			// Wait for the app to be ready
-			for {
-				_, err := http.Get(fmt.Sprintf("http://localhost:%d", freePort))
-				if err == nil {
-					break
+			ready := make(chan bool)
+			go func() {
+				for {
+					resp, err := http.Get(fmt.Sprintf("http://localhost:%d", freePort))
+					if err == nil && resp.StatusCode < 500 {
+						ready <- true
+						return
+					}
+					time.Sleep(300 * time.Millisecond)
 				}
-				time.Sleep(500 * time.Millisecond)
-			}
+			}()
 
-			appUrl, _ := url.Parse(fmt.Sprintf("http://localhost:%d", freePort))
-			httputil.NewSingleHostReverseProxy(appUrl).ServeHTTP(w, r)
+			select {
+			case <-ready:
+				appUrl, _ := url.Parse(fmt.Sprintf("http://localhost:%d", freePort))
+				httputil.NewSingleHostReverseProxy(appUrl).ServeHTTP(w, r)
+			case <-time.After(20 * time.Second):
+				logReader, _ := cli.ContainerLogs(context.Background(), dockerAppName, container.LogsOptions{
+					ShowStdout: true,
+					ShowStderr: true,
+					Timestamps: false,
+				})
+				defer logReader.Close()
+
+				var combinedBuf bytes.Buffer
+				multiWriter := io.MultiWriter(&combinedBuf)
+				stdcopy.StdCopy(multiWriter, multiWriter, logReader)
+
+				logs := combinedBuf.String()
+
+				w.WriteHeader(http.StatusInternalServerError)
+				w.Header().Set("Content-Type", "text/html")
+
+				fileContent, err := resources.Resources.ReadFile(filepath.Join("pages", "error.html"))
+				if err != nil {
+					http.Error(w, fmt.Sprintf("Error reading file: %s", err), http.StatusInternalServerError)
+					return
+				}
+
+				templ, _ := template.New("error.html").Parse(string(fileContent))
+				template.Must(templ.Clone()).Execute(w, struct {
+					ErrorCode string
+					Message   string
+					Logs      string
+				}{
+					ErrorCode: "CONTAINER_TIMEOUT",
+					Message:   "The app timed out",
+					Logs:      string(logs),
+				})
+			}
 		})
 
 		// Exit handler
@@ -182,21 +226,19 @@ var devCmd = &cobra.Command{
 			<-stop
 
 			cmd.Println("Stopping development containers")
-
-			containers, err := cli.ContainerList(context.Background(), container.ListOptions{})
+			containers, err := cli.ContainerList(context.Background(), container.ListOptions{
+				Filters: filters.NewArgs(filters.Arg("name", "localapps-")),
+			})
 			if err != nil {
 				cmd.Printf("Failed to list containers: %s\n", err)
 				return
 			}
 
 			for _, c := range containers {
-				if strings.HasPrefix(c.Names[0], "/localapps-app-") {
-					if err := cli.ContainerRemove(context.Background(), c.ID, container.RemoveOptions{Force: true}); err != nil {
-						cmd.Printf("Failed to stop development container: %s\n", err)
-						break
-					}
+				if err := cli.ContainerRemove(context.Background(), c.ID, container.RemoveOptions{Force: true}); err != nil {
+					cmd.Printf("Failed to stop development container: %s\n", err)
+					break
 				}
-
 			}
 			os.Exit(0)
 		}()
