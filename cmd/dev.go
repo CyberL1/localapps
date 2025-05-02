@@ -95,6 +95,30 @@ var devCmd = &cobra.Command{
 			buildCmd.Run()
 		}
 
+		config := container.Config{
+			Image:        "amir20/dozzle",
+			ExposedPorts: nat.PortSet{"8080": struct{}{}},
+			Env: []string{
+				"DOZZLE_ENABLE_ACTIONS=true",
+				"DOZZLE_ENABLE_SHELL=true",
+				"DOZZLE_FILTER=\"name=localapps-app-\"",
+			},
+		}
+
+		hostConfig := container.HostConfig{
+			AutoRemove:   true,
+			Binds:        []string{"/var/run/docker.sock:/var/run/docker.sock"},
+			PortBindings: nat.PortMap{"8080": {{HostIP: "127.0.0.1", HostPort: "8081"}}},
+		}
+
+		dozzleContainer, _ := cli.ContainerCreate(context.Background(), &config, &hostConfig, nil, nil, "localapps-dev-dozzle")
+		cli.ContainerStart(context.Background(), dozzleContainer.ID, container.StartOptions{})
+
+		if err := cli.ContainerStart(context.Background(), dozzleContainer.ID, container.StartOptions{}); err != nil {
+			fmt.Printf("Failed to start dozzle logger: %s\n", err)
+			return
+		}
+
 		http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 			var dockerAppName string
 			var dockerImageName string
@@ -142,6 +166,9 @@ var devCmd = &cobra.Command{
 					Env:   []string{"PORT=80"},
 					ExposedPorts: nat.PortSet{
 						"80": struct{}{},
+					},
+					Labels: map[string]string{
+						"dev.dozzle.name": strings.Split(dockerImageName, "/")[3],
 					},
 				}
 
@@ -228,6 +255,7 @@ var devCmd = &cobra.Command{
 			cmd.Println("Stopping development containers")
 			containers, err := cli.ContainerList(context.Background(), container.ListOptions{
 				Filters: filters.NewArgs(filters.Arg("name", "localapps-")),
+				All:     true,
 			})
 			if err != nil {
 				cmd.Printf("Failed to list containers: %s\n", err)
@@ -244,6 +272,8 @@ var devCmd = &cobra.Command{
 		}()
 
 		cmd.Println("Your app is ready on http://localhost:8080")
+		cmd.Println("App's logs are accessible on http://localhost:8081")
+
 		if err := http.ListenAndServe(":8080", nil); err != nil {
 			fmt.Printf("Failed to bind to port 8080: %s\n", err)
 			os.Exit(1)
