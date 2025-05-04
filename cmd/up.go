@@ -23,6 +23,7 @@ import (
 
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
+	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
 	"github.com/spf13/cobra"
@@ -121,7 +122,7 @@ var upCmd = &cobra.Command{
 					},
 				},
 			},
-			Binds:      []string{fmt.Sprintf("%s:/var/lib/postgresql/data", filepath.Join(constants.LocalappsDir, "data"))},
+			Mounts:     []mount.Mount{{Type: mount.TypeVolume, Source: "localapps-database", Target: "/var/lib/postgresql/data"}},
 			AutoRemove: true,
 		}
 
