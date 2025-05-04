@@ -2,8 +2,11 @@ package appsApi
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"localapps/constants"
 	dbClient "localapps/db/client"
+	"localapps/types"
 	"net/http"
 
 	"github.com/docker/docker/api/types/container"
@@ -19,13 +22,31 @@ func uninstallApp(w http.ResponseWriter, r *http.Request) {
 
 	_, err := client.GetApp(context.Background(), appId)
 	if err != nil {
-		http.Error(w, "App not installed", http.StatusInternalServerError)
+		response := types.ApiError{
+			Code:    constants.ErrorNotFound,
+			Message: fmt.Sprintf("App \"%s\" not installed", appId),
+			Error:   err,
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(response)
 		return
 	}
 
-	cli, err := dockerClient.NewClientWithOpts(dockerClient.FromEnv)
+	cli, _ := dockerClient.NewClientWithOpts(dockerClient.FromEnv)
+	
+	_, err = cli.Ping(context.Background())
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Failed to connect to docker engine: %s", err), http.StatusInternalServerError)
+		response := types.ApiError{
+			Code:    constants.ErrorDockerEngine,
+			Message: "Failed to connect to Docker engine",
+			Error:   err,
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(response)
 		return
 	}
 
@@ -34,7 +55,15 @@ func uninstallApp(w http.ResponseWriter, r *http.Request) {
 		for _, c := range appContainers {
 			err := cli.ContainerRemove(context.Background(), c.ID, container.RemoveOptions{Force: true})
 			if err != nil {
-				http.Error(w, fmt.Sprintf("Error removing app conianer: %s", err), http.StatusInternalServerError)
+				response := types.ApiError{
+					Code:    constants.ErrorUninstall,
+					Message: "Error while removing app container",
+					Error:   err,
+				}
+
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusInternalServerError)
+				json.NewEncoder(w).Encode(response)
 				return
 			}
 		}
@@ -45,7 +74,15 @@ func uninstallApp(w http.ResponseWriter, r *http.Request) {
 		for _, volume := range storageVolumes.Volumes {
 			err = cli.VolumeRemove(context.Background(), volume.Name, false)
 			if err != nil {
-				http.Error(w, fmt.Sprintf("Error removing app storage: %s", err), http.StatusInternalServerError)
+				response := types.ApiError{
+					Code:    constants.ErrorUninstall,
+					Message: "Error while removing app storage",
+					Error:   err,
+				}
+
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusInternalServerError)
+				json.NewEncoder(w).Encode(response)
 				return
 			}
 		}
@@ -56,7 +93,15 @@ func uninstallApp(w http.ResponseWriter, r *http.Request) {
 		for _, im := range appImages {
 			_, err = cli.ImageRemove(context.Background(), im.ID, image.RemoveOptions{Force: true})
 			if err != nil {
-				http.Error(w, fmt.Sprintf("Error removing app image: %s", err), http.StatusInternalServerError)
+				response := types.ApiError{
+					Code:    constants.ErrorUninstall,
+					Message: "Error while removing app image",
+					Error:   err,
+				}
+
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusInternalServerError)
+				json.NewEncoder(w).Encode(response)
 				return
 			}
 		}
@@ -64,7 +109,15 @@ func uninstallApp(w http.ResponseWriter, r *http.Request) {
 
 	err = client.DeleteApp(context.Background(), appId)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Error deleting app record from db: %s", err), http.StatusInternalServerError)
+		response := types.ApiError{
+			Code:    constants.ErrorDb,
+			Message: "Error while deleting DB record",
+			Error:   err,
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(response)
 		return
 	}
 

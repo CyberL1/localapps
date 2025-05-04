@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"localapps/constants"
 	"localapps/resources"
 	"localapps/types"
 	"localapps/utils"
@@ -239,7 +240,7 @@ var devCmd = &cobra.Command{
 					Message   string
 					Logs      string
 				}{
-					ErrorCode: "CONTAINER_TIMEOUT",
+					ErrorCode: constants.ErrorContainerTimeout,
 					Message:   "The app timed out",
 					Logs:      string(logs),
 				})

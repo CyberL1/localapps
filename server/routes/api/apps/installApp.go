@@ -3,8 +3,8 @@ package appsApi
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
+	"localapps/constants"
 	dbClient "localapps/db/client"
 	db "localapps/db/generated"
 	"localapps/types"
@@ -19,40 +19,99 @@ import (
 func installApp(w http.ResponseWriter, r *http.Request) {
 	appInfoFile, _, err := r.FormFile("file")
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Error reading uploaded file: %s", err), http.StatusBadRequest)
+		response := types.ApiError{
+			Code:    constants.ErrorNotFound,
+			Message: "Field 'file' not found",
+			Error:   err,
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(response)
 		return
 	}
 	defer appInfoFile.Close()
 
 	fileContent, err := io.ReadAll(appInfoFile)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Error reading file content: %s", err), http.StatusInternalServerError)
+		response := types.ApiError{
+			Code:    constants.ErrorRead,
+			Message: "Error while reading file content",
+			Error:   err,
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(response)
 		return
 	}
 
 	var appInfo types.App
 	if err := yaml.Unmarshal(fileContent, &appInfo); err != nil {
-		http.Error(w, fmt.Sprintf("Error unmarshaling YAML content: %s", err), http.StatusBadRequest)
+		response := types.ApiError{
+			Code:    constants.ErrorParse,
+			Message: "Error while parsing YAML content",
+			Error:   err,
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(response)
 		return
 	}
 
-	var appId string
-	if appInfo.Id != "" {
-		appId = appInfo.Id
-	} else {
-		appId = strings.ToLower(strings.ReplaceAll(appInfo.Name, " ", "-"))
+	if appInfo.Name == "" {
+		response := types.ApiError{
+			Code:    constants.ErrorFieldRequired,
+			Message: "Field 'name' required",
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(response)
+		return
 	}
 
-	if strings.Contains(appId, " ") {
-		http.Error(w, "App ID cannot contain spaces", http.StatusBadRequest)
+	if appInfo.Id == "" {
+		appInfo.Id = strings.ToLower(strings.ReplaceAll(appInfo.Name, " ", "-"))
+	}
+
+	if appInfo.Parts == nil {
+		respose := types.ApiError{
+			Code:    constants.ErrorFieldRequired,
+			Message: "Field 'parts' required",
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(respose)
+		return
+	}
+
+	if strings.Contains(appInfo.Id, " ") {
+		respose := types.ApiError{
+			Code:    constants.ErrorParse,
+			Message: "App ID cannot contain spaces",
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(respose)
 		return
 	}
 
 	client, _ := dbClient.GetClient()
-	appWithTheSameId, _ := client.GetApp(context.Background(), appId)
+	appWithTheSameId, _ := client.GetApp(context.Background(), appInfo.Id)
 
-	if appWithTheSameId.ID == appId {
-		http.Error(w, "App already installed", http.StatusInternalServerError)
+	if r.FormValue("update") != "true" && appWithTheSameId.ID == appInfo.Id {
+		response := types.ApiError{
+			Code:    constants.ErrorAppInstalled,
+			Message: "App already installed",
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(response)
 		return
 	}
 
@@ -63,18 +122,43 @@ func installApp(w http.ResponseWriter, r *http.Request) {
 
 	partsJson, err := json.Marshal(appParts)
 	if err != nil {
-		fmt.Println("Error marshaling map to JSON:", err)
+		response := types.ApiError{
+			Code:    constants.ErrorParse,
+			Message: "Error while marshaling map to JSON",
+			Error:   err,
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(response)
+		return
 	}
 
-	_, err = client.CreateApp(context.Background(), db.CreateAppParams{
-		ID:          appId,
-		InstalledAt: pgtype.Timestamp{Time: time.Now(), Valid: true},
-		Name:        appInfo.Name,
-		Parts:       partsJson,
-	})
+	if r.FormValue("update") == "true" {
+		_, err = client.UpdateApp(context.Background(), db.UpdateAppParams{
+			ID:    appInfo.Id,
+			Name:  appInfo.Name,
+			Parts: partsJson,
+		})
+	} else {
+		_, err = client.CreateApp(context.Background(), db.CreateAppParams{
+			ID:          appInfo.Id,
+			InstalledAt: pgtype.Timestamp{Time: time.Now(), Valid: true},
+			Name:        appInfo.Name,
+			Parts:       partsJson,
+		})
+	}
 
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Error creating app record in db: %s", err), http.StatusInternalServerError)
+		response := types.ApiError{
+			Code:    constants.ErrorEncode,
+			Message: "Error while creating DB record",
+			Error:   err,
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(response)
 		return
 	}
 

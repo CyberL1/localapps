@@ -8,5 +8,9 @@ SELECT * FROM apps WHERE id = $1;
 INSERT INTO apps (id, installed_at, name, parts, icon) VALUES ($1, $2, $3, $4, $5)
 RETURNING *;
 
+-- name: UpdateApp :one
+UPDATE apps SET name = $2, parts = $3, icon = $4 WHERE id = $1
+RETURNING *;
+
 -- name: DeleteApp :exec
 DELETE FROM apps WHERE id = $1;

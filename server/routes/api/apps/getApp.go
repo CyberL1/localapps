@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"localapps/constants"
 	dbClient "localapps/db/client"
 	"localapps/types"
 	"net/http"
@@ -14,7 +15,15 @@ func getApp(w http.ResponseWriter, r *http.Request) {
 
 	app, err := db.GetApp(context.Background(), r.PathValue("appId"))
 	if err != nil {
-		http.Error(w, fmt.Sprintf("App \"%s\" not found", r.PathValue("appId")), http.StatusInternalServerError)
+		response := types.ApiError{
+			Code:    constants.ErrorNotFound,
+			Message: fmt.Sprintf("App \"%s\" not found", r.PathValue("appId")),
+			Error: err,
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(response)
 		return
 	}
 
@@ -35,7 +44,15 @@ func getApp(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	if err := json.NewEncoder(w).Encode(response); err != nil {
-		http.Error(w, fmt.Sprintf("Error encoding JSON: %s", err), http.StatusInternalServerError)
+		response := types.ApiError{
+			Code:    constants.ErrorEncode,
+			Message: "Error while encoding JSON",
+			Error:   err,
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(response)
 		return
 	}
 }

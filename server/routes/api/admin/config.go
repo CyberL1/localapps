@@ -2,7 +2,8 @@ package adminApi
 
 import (
 	"encoding/json"
-	"fmt"
+	"localapps/constants"
+	"localapps/types"
 	"localapps/utils"
 	"net/http"
 )
@@ -12,7 +13,14 @@ func getConfig(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(config); err != nil {
-		http.Error(w, fmt.Sprintf("Error encoding JSON: %s", err), http.StatusInternalServerError)
+		response := types.ApiError{
+			Code:    constants.ErrorEncode,
+			Message: "Error while encoding JSON",
+			Error:   err,
+		}
+
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(response)
 		return
 	}
 }

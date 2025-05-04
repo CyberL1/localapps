@@ -54,9 +54,11 @@ var upCmd = &cobra.Command{
 		cmd.Println("Creating database server container")
 		freePort, _ := utils.GetFreePort()
 
-		cli, err := client.NewClientWithOpts(client.FromEnv)
+		cli, _ := client.NewClientWithOpts(client.FromEnv)
+
+		_, err := cli.Ping(context.Background())
 		if err != nil {
-			fmt.Printf("Failed to connect to Docker daemon: %s\n", err)
+			fmt.Printf("Failed to connect to Docker engine: %s\n", err)
 			return
 		}
 

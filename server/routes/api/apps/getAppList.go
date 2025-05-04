@@ -3,7 +3,7 @@ package appsApi
 import (
 	"context"
 	"encoding/json"
-	"fmt"
+	"localapps/constants"
 	dbClient "localapps/db/client"
 	"localapps/types"
 	"localapps/utils"
@@ -14,7 +14,15 @@ func getAppList(w http.ResponseWriter, r *http.Request) {
 	db, _ := dbClient.GetClient()
 	apps, err := db.ListApps(context.Background())
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Error fetching apps: %s", err), http.StatusInternalServerError)
+		response := types.ApiError{
+			Code:    constants.ErrorDb,
+			Message: "Error while fetching apps",
+			Error:   err,
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(response)
 		return
 	}
 
@@ -45,7 +53,14 @@ func getAppList(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	if err := json.NewEncoder(w).Encode(list); err != nil {
-		http.Error(w, fmt.Sprintf("Error encoding JSON: %s", err), http.StatusInternalServerError)
+		response := types.ApiError{
+			Code:    constants.ErrorEncode,
+			Message: "Error while encoding JSON",
+			Error:   err,
+		}
+
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(response)
 		return
 	}
 }

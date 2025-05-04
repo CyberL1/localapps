@@ -38,9 +38,11 @@ func AppProxy(next http.Handler) http.Handler {
 				return
 			}
 
-			cli, err := client.NewClientWithOpts(client.FromEnv)
+			cli, _ := client.NewClientWithOpts(client.FromEnv)
+
+			_, err = cli.Ping(context.Background())
 			if err != nil {
-				w.Write([]byte(fmt.Sprintf("Failed to connect to Docker daemon: %s", err)))
+				w.Write([]byte(fmt.Sprintf("Failed to connect to Docker engine: %s", err)))
 				return
 			}
 
