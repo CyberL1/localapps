@@ -20,7 +20,7 @@ import (
 
 func AppProxy(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if !strings.HasSuffix(r.Host, utils.CachedConfig.Domain) {
+		if !strings.HasSuffix(r.Host, utils.ServerConfig.Domain) {
 			if strings.HasPrefix(r.URL.Path, "/api") {
 				next.ServeHTTP(w, r)
 			} else {
@@ -29,7 +29,7 @@ func AppProxy(next http.Handler) http.Handler {
 			return
 		}
 
-		if len(strings.Split(r.Host, ".")) == len(strings.Split(utils.CachedConfig.Domain, "."))+1 {
+		if len(strings.Split(r.Host, ".")) == len(strings.Split(utils.ServerConfig.Domain, "."))+1 {
 			appId := strings.Split(r.Host, ".")[0]
 
 			appData, err := utils.GetAppData(appId)

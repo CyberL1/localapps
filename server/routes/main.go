@@ -31,7 +31,7 @@ func homePage(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("Error creating request: %s", err), http.StatusInternalServerError)
 		return
 	}
-	req.Header.Add("Authorization", utils.CachedConfig.ApiKey)
+	req.Header.Add("Authorization", utils.ServerConfig.ApiKey)
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
@@ -60,10 +60,10 @@ func homePage(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "text/html")
 	data := struct {
-		Config types.Config
+		Config types.ServerConfig
 		Apps   []*types.ApiAppResponse
 	}{
-		Config: utils.CachedConfig,
+		Config: utils.ServerConfig,
 		Apps:   list,
 	}
 

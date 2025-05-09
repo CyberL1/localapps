@@ -153,7 +153,7 @@ var upCmd = &cobra.Command{
 		dbClient.Migrate()
 
 		fmt.Println("Fetching server configuration")
-		err = utils.UpdateConfigCache()
+		err = utils.UpdateServerConfigCache()
 		if err != nil {
 			fmt.Printf("Error updating config cache: %s\n", err)
 			return
@@ -192,7 +192,7 @@ var upCmd = &cobra.Command{
 				fmt.Printf("Error updating domain: %s\n", err)
 			}
 
-			err = utils.UpdateConfigCache()
+			err = utils.UpdateServerConfigCache()
 			if err != nil {
 				fmt.Printf("Error updating config cache: %s\n", err)
 				return
@@ -206,7 +206,7 @@ var upCmd = &cobra.Command{
 			}
 		}
 
-		if utils.CachedConfig.ApiKey == "" {
+		if utils.ServerConfig.ApiKey == "" {
 			fmt.Println("Server API Key is empty, using a random value")
 			client, _ := dbClient.GetClient()
 
@@ -224,7 +224,7 @@ var upCmd = &cobra.Command{
 				fmt.Printf("Error updating domain: %s\n", err)
 			}
 
-			err = utils.UpdateConfigCache()
+			err = utils.UpdateServerConfigCache()
 			if err != nil {
 				fmt.Printf("Error updating config cache: %s\n", err)
 				return

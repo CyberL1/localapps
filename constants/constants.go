@@ -5,10 +5,10 @@ import (
 	"path/filepath"
 )
 
-var homeDir = os.Getenv("HOME")
+var configDir, _ = os.UserConfigDir()
 
 var (
-	LocalappsDir     = filepath.Join(homeDir, ".config", "localapps")
+	LocalappsDir     = filepath.Join(configDir, "localapps")
 	Version          string
 	GithubReleaseUrl = "https://api.github.com/repos/CyberL1/localapps/releases/latest"
 )

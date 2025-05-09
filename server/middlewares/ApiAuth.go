@@ -22,7 +22,7 @@ func ApiAuth(next http.Handler) http.Handler {
 			return
 		}
 
-		if r.Header.Get("Authorization") != utils.CachedConfig.ApiKey {
+		if r.Header.Get("Authorization") != utils.ServerConfig.ApiKey {
 			noAccessError := types.ApiError{
 				Code:    constants.ErrorAccessDenied,
 				Message: "Invalid API Key",
