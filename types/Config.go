@@ -1,7 +1,7 @@
 package types
 
 type ServerConfig struct {
-	Domain string `default:"\"apps.localhost:8080\""`
+	Domain string `default:"\"localhost:8080\""`
 	ApiKey string `default:"\"\""`
 }
 

@@ -109,3 +109,12 @@ func validateCliConfig() error {
 	}
 	return nil
 }
+
+func SaveCliConfig() error {
+	data, err := json.Marshal(CliConfig)
+	if err != nil {
+		return fmt.Errorf("failed to marshal CliConfig: %s", err)
+	}
+	os.WriteFile(filepath.Join(constants.LocalappsDir, "cli-config.json"), data, 0644)
+	return nil
+}

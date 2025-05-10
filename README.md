@@ -22,7 +22,7 @@ Linux:
 ### Locally
 
 1. Do `localapps up`
-2. Go to `apps.localhost:8080` and you're good to go
+2. Go to `ocalhost:8080` and you're good to go
 
 ### Remote (VPS)
 
