@@ -46,8 +46,7 @@ func AppProxy(next http.Handler) http.Handler {
 				return
 			}
 
-			var dockerAppName string
-			var dockerImageName string
+			var currentPartName string
 			var fallbackPartName string
 
 			for name, path := range appData.Parts {
@@ -56,24 +55,23 @@ func AppProxy(next http.Handler) http.Handler {
 				}
 
 				if strings.Split(r.URL.Path, "/")[1] == path {
-					dockerAppName = "localapps-app-" + appId + "-" + name
-					dockerImageName = "localapps/apps/" + appId + "/" + name
+					currentPartName = name
 					break
 				} else {
-					dockerAppName = "localapps-app-" + appId + "-" + fallbackPartName
-					dockerImageName = "localapps/apps/" + appId + "/" + fallbackPartName
+					currentPartName = fallbackPartName
 				}
 			}
 
-			containersByName, _ := cli.ContainerList(context.Background(), container.ListOptions{
+			containersByLabels, _ := cli.ContainerList(context.Background(), container.ListOptions{
 				Filters: filters.NewArgs(
-					filters.Arg("name", dockerAppName),
+					filters.Arg("label", "LOCALAPPS_APP_ID="+appId),
+					filters.Arg("label", "LOCALAPPS_APP_PART="+currentPartName),
 				),
 			})
 
 			var freePort int
-			if len(containersByName) > 0 {
-				appContainer := containersByName[0]
+			if len(containersByLabels) > 0 {
+				appContainer := containersByLabels[0]
 
 				containerPort := appContainer.Ports[0].PublicPort
 				freePort = int(containerPort)
@@ -81,10 +79,14 @@ func AppProxy(next http.Handler) http.Handler {
 				freePort, _ = utils.GetFreePort()
 
 				config := container.Config{
-					Image: dockerImageName,
+					Image: "localapps/apps/" + appId + "/" + currentPartName,
 					Env:   []string{"PORT=80"},
 					ExposedPorts: nat.PortSet{
 						"80": struct{}{},
+					},
+					Labels: map[string]string{
+						"LOCALAPPS_APP_ID":   appId,
+						"LOCALAPPS_APP_PART": currentPartName,
 					},
 				}
 
@@ -101,9 +103,9 @@ func AppProxy(next http.Handler) http.Handler {
 					},
 				}
 
-				appNameWithPart := strings.Replace(strings.TrimPrefix(dockerAppName, "localapps-app-"), "-", ":", 1)
+				appNameWithPart := appId + "/" + currentPartName
 
-				createdContainer, _ := cli.ContainerCreate(context.Background(), &config, &hostConfig, nil, nil, dockerAppName)
+				createdContainer, _ := cli.ContainerCreate(context.Background(), &config, &hostConfig, nil, nil, "")
 				fmt.Println("[app:"+appNameWithPart+"]", "Got a http request while stopped - creating container")
 
 				if err := cli.ContainerStart(context.Background(), createdContainer.ID, container.StartOptions{}); err != nil {

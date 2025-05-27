@@ -96,7 +96,7 @@ var upCmd = &cobra.Command{
 			}
 		}
 
-		if staleContainers, _ := cli.ContainerList(context.Background(), container.ListOptions{Filters: filters.NewArgs(filters.Arg("name", "localapps-")), All: true}); len(staleContainers) > 0 {
+		if staleContainers, _ := cli.ContainerList(context.Background(), container.ListOptions{Filters: filters.NewArgs(filters.Arg("label", "LOCALAPPS_APP_ID")), All: true}); len(staleContainers) > 0 {
 			fmt.Printf("Found %d stale containers, removing\n", len(staleContainers))
 
 			for _, c := range staleContainers {
