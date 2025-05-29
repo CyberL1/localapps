@@ -52,9 +52,7 @@ var upCmd = &cobra.Command{
 			}
 		}
 
-		cmd.Println("Creating database server container")
 		freePort, _ := utils.GetFreePort()
-
 		cli, _ := client.NewClientWithOpts(client.FromEnv)
 
 		_, err := cli.Ping(context.Background())
@@ -104,6 +102,7 @@ var upCmd = &cobra.Command{
 			}
 		}
 
+		cmd.Println("Creating database server container")
 		config := container.Config{
 			Image: "postgres:17-alpine",
 			Env: []string{
@@ -245,7 +244,7 @@ var upCmd = &cobra.Command{
 			<-stop
 
 			cmd.Println("Stopping database container")
-			if err := cli.ContainerRemove(context.Background(), databaseContainer.ID, container.RemoveOptions{Force: true}); err != nil {
+			if err := cli.ContainerStop(context.Background(), databaseContainer.ID, container.StopOptions{}); err != nil {
 				cmd.Printf("Failed to stop database container: %s\n", err)
 			}
 			os.Exit(0)
