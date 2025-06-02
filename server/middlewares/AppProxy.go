@@ -20,15 +20,6 @@ import (
 
 func AppProxy(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if !strings.HasSuffix(r.Host, utils.ServerConfig.Domain) {
-			if strings.HasPrefix(r.URL.Path, "/api") {
-				next.ServeHTTP(w, r)
-			} else {
-				w.WriteHeader(http.StatusForbidden)
-			}
-			return
-		}
-
 		if len(strings.Split(r.Host, ".")) == len(strings.Split(utils.ServerConfig.Domain, "."))+1 {
 			appId := strings.Split(r.Host, ".")[0]
 

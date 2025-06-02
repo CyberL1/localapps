@@ -250,7 +250,7 @@ var upCmd = &cobra.Command{
 			os.Exit(0)
 		}()
 
-		if err := http.ListenAndServe(":8080", middlewares.AppProxy(router)); err != nil {
+		if err := http.ListenAndServe(":8080", middlewares.FrontendProxy(middlewares.AppProxy(router))); err != nil {
 			fmt.Printf("Failed to bind to port 8080: %s\n", err)
 			os.Exit(1)
 		}
