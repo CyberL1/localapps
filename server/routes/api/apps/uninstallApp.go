@@ -50,7 +50,7 @@ func uninstallApp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	appContainers, _ := cli.ContainerList(context.Background(), container.ListOptions{Filters: filters.NewArgs(filters.Arg("name", "localapps-app-"+appId))})
+	appContainers, _ := cli.ContainerList(context.Background(), container.ListOptions{Filters: filters.NewArgs(filters.Arg("label", "LOCALAPPS_APP_ID="+appId))})
 	if len(appContainers) > 0 {
 		for _, c := range appContainers {
 			err := cli.ContainerRemove(context.Background(), c.ID, container.RemoveOptions{Force: true})
