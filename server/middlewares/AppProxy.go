@@ -92,6 +92,7 @@ func AppProxy(next http.Handler) http.Handler {
 							},
 						},
 					},
+					NetworkMode: "localapps-network",
 				}
 
 				appNameWithPart := appId + "/" + currentPartName

@@ -24,6 +24,7 @@ import (
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/mount"
+	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
 	"github.com/spf13/cobra"
@@ -102,6 +103,9 @@ var upCmd = &cobra.Command{
 			}
 		}
 
+		cmd.Println("Creating localapps network")
+		cli.NetworkCreate(context.Background(), "localapps-network", network.CreateOptions{})
+
 		cmd.Println("Creating database server container")
 		config := container.Config{
 			Image: "postgres:17-alpine",
@@ -121,8 +125,9 @@ var upCmd = &cobra.Command{
 					},
 				},
 			},
-			Mounts:     []mount.Mount{{Type: mount.TypeVolume, Source: "localapps-database", Target: "/var/lib/postgresql/data"}},
-			AutoRemove: true,
+			Mounts:      []mount.Mount{{Type: mount.TypeVolume, Source: "localapps-database", Target: "/var/lib/postgresql/data"}},
+			AutoRemove:  true,
+			NetworkMode: "localapps-network",
 		}
 
 		databaseContainer, err := cli.ContainerCreate(context.Background(), &config, &hostConfig, nil, nil, "localapps-database")
