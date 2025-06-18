@@ -163,37 +163,37 @@ var upCmd = &cobra.Command{
 			return
 		}
 
-		domainFilePath := filepath.Join(constants.LocalappsDir, "domain.txt")
-		if _, err := os.Stat(domainFilePath); err == nil {
-			fmt.Println("Found domain.txt file, updating server configuration")
+		accessUrlFilePath := filepath.Join(constants.LocalappsDir, "access-url.txt")
+		if _, err := os.Stat(accessUrlFilePath); err == nil {
+			fmt.Println("Found access-url.txt file, updating server configuration")
 			client, _ := dbClient.GetClient()
 
-			file, err := os.Open(domainFilePath)
+			file, err := os.Open(accessUrlFilePath)
 			if err != nil {
 				fmt.Printf("Error opening file: %s\n", err)
 				return
 			}
 			defer file.Close()
 
-			domainFileContents, err := io.ReadAll(file)
+			accessUrlFileContents, err := io.ReadAll(file)
 			if err != nil {
 				fmt.Printf("Error reading file: %s\n", err)
 				return
 			}
 
-			domainRaw := strings.Split(string(domainFileContents), "\n")[0]
-			domainParsed, err := json.Marshal(string(domainRaw))
+			accessUrlRaw := strings.Split(string(accessUrlFileContents), "\n")[0]
+			accessUrlParsed, err := json.Marshal(string(accessUrlRaw))
 			if err != nil {
 				fmt.Printf("Error parsing file: %s\n", err)
 				return
 			}
 
 			_, err = client.UpdateConfigKey(context.Background(), db.UpdateConfigKeyParams{
-				Key:   "Domain",
-				Value: pgtype.Text{String: string(domainParsed), Valid: true},
+				Key:   "AccessUrl",
+				Value: pgtype.Text{String: string(accessUrlParsed), Valid: true},
 			})
 			if err != nil {
-				fmt.Printf("Error updating domain: %s\n", err)
+				fmt.Printf("Error updating access URL: %s\n", err)
 			}
 
 			err = utils.UpdateServerConfigCache()
@@ -203,7 +203,7 @@ var upCmd = &cobra.Command{
 			}
 
 			fmt.Println("Success, removing the file")
-			err = os.Remove(domainFilePath)
+			err = os.Remove(accessUrlFilePath)
 			if err != nil {
 				fmt.Printf("Error removing file: %s\n", err)
 				return
@@ -255,7 +255,7 @@ var upCmd = &cobra.Command{
 			os.Exit(0)
 		}()
 
-		if err := http.ListenAndServe(":8080", middlewares.FrontendProxy(middlewares.AppProxy(router))); err != nil {
+		if err := http.ListenAndServe(":8080", middlewares.AppProxy(router)); err != nil {
 			fmt.Printf("Failed to bind to port 8080: %s\n", err)
 			os.Exit(1)
 		}

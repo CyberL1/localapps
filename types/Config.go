@@ -1,8 +1,8 @@
 package types
 
 type ServerConfig struct {
-	Domain string `default:"\"localhost:8080\""`
-	ApiKey string `default:"\"\""`
+	AccessUrl string `default:"\"http://localhost:8080\""`
+	ApiKey    string `default:"\"\""`
 }
 
 type CliConfig struct {

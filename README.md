@@ -22,10 +22,10 @@ Linux:
 ### Locally
 
 1. Do `localapps up`
-2. Go to `localhost:8080` and you're good to go
+2. Go to `http://localhost:8080` and you're good to go
 
 ### Remote (VPS)
 
-1. Create `domain.txt` file using `echo "domain.tld" > ~/.config/localapps/domain.txt`
+1. Create `access-url.txt` file using `echo "http://domain.tld" > ~/.config/localapps/access-url.txt`
 2. Do `localapps up`
-3. Go to the domain you set to access localapps
+3. Go to the url you set to access localapps
