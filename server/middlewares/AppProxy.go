@@ -27,7 +27,7 @@ func AppProxy(next http.Handler) http.Handler {
 			appId = strings.Split(r.Host, ".")[0]
 		} else {
 			appId = "home"
-			appEnvironmentVars = append(appEnvironmentVars, "ORIGIN="+utils.ServerConfig.AccessUrl)
+			appEnvironmentVars = append(appEnvironmentVars, "ORIGIN="+utils.ServerConfig.AccessUrl, "LOCALAPPS_API_KEY="+utils.ServerConfig.ApiKey)
 
 			if strings.HasPrefix(r.URL.Path, "/api") {
 				next.ServeHTTP(w, r)
