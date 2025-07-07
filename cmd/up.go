@@ -23,6 +23,7 @@ import (
 
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
+	"github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/client"
@@ -105,6 +106,13 @@ var upCmd = &cobra.Command{
 
 		cmd.Println("Creating localapps network")
 		cli.NetworkCreate(context.Background(), "localapps-network", network.CreateOptions{})
+
+		databaseImage := "postgres:17-alpine"
+		if r, err := cli.ImagePull(context.Background(), databaseImage, image.PullOptions{}); err != nil {
+			fmt.Printf("Error while pulling database image: %s\n", err)
+		} else {
+			io.Copy(os.Stdout, r)
+		}
 
 		cmd.Println("Creating database server container")
 		config := container.Config{
