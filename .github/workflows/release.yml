@@ -1,13 +1,14 @@
 name: Release
-permissions: write-all
+
 on:
   push:
     tags:
       - "v*"
 
 jobs:
-  build:
-    name: Build
+  build-and-release-executable:
+    name: Build and release executable
+    permissions: write-all
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -43,3 +44,36 @@ jobs:
           tag: ${{ env.RELEASE_VERSION }}
           artifacts: localapps-${{ matrix.os }}-${{ matrix.arch }}.zip
           allowUpdates: true
+  build-and-push-docker-image:
+    name: Build and push docker image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/CyberL1/localapps
+          tags: |
+            type=raw,value=latest
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+      - name: Build and push Docker image
+        id: push
+        uses: docker/build-push-action@v6
+        with:
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
