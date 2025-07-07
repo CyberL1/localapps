@@ -3,6 +3,7 @@ package middlewares
 import (
 	"context"
 	"fmt"
+	"localapps/constants"
 	"localapps/utils"
 	"net/http"
 	"net/http/httputil"
@@ -27,7 +28,13 @@ func AppProxy(next http.Handler) http.Handler {
 			appId = strings.Split(r.Host, ".")[0]
 		} else {
 			appId = "home"
-			appEnvironmentVars = append(appEnvironmentVars, "ORIGIN="+utils.ServerConfig.AccessUrl, "LOCALAPPS_API_KEY="+utils.ServerConfig.ApiKey)
+
+			var origin = "localhost"
+			if constants.IsRunningInContainer() {
+				origin = "localapps-server"
+			}
+
+			appEnvironmentVars = append(appEnvironmentVars, "ORIGIN=http://"+origin+":8080", "LOCALAPPS_API_KEY="+utils.ServerConfig.ApiKey)
 
 			if strings.HasPrefix(r.URL.Path, "/api") {
 				next.ServeHTTP(w, r)
@@ -73,20 +80,22 @@ func AppProxy(next http.Handler) http.Handler {
 		})
 
 		var freePort int
+		var containerAddress string
+
 		if len(containersByLabels) > 0 {
-			appContainer := containersByLabels[0]
-
-			containerPort := appContainer.Ports[0].PublicPort
-			freePort = int(containerPort)
+			if constants.IsRunningInContainer() {
+				containerInspect, _ := cli.ContainerInspect(context.Background(), containersByLabels[0].ID)
+				containerAddress = strings.TrimPrefix(containerInspect.Name, "/")
+				freePort = 80
+			} else {
+				containerPort := containersByLabels[0].Ports[0].PublicPort
+				containerAddress = "localhost"
+				freePort = int(containerPort)
+			}
 		} else {
-			freePort, _ = utils.GetFreePort()
-
 			config := container.Config{
 				Image: "localapps/apps/" + appId + "/" + currentPartName,
 				Env:   append(appEnvironmentVars, "PORT=80"),
-				ExposedPorts: nat.PortSet{
-					"80": struct{}{},
-				},
 				Labels: map[string]string{
 					"LOCALAPPS_APP_ID":   appId,
 					"LOCALAPPS_APP_PART": currentPartName,
@@ -94,22 +103,35 @@ func AppProxy(next http.Handler) http.Handler {
 			}
 
 			hostConfig := container.HostConfig{
-				AutoRemove: true,
-				Mounts:     []mount.Mount{{Type: mount.TypeVolume, Source: "localapps-storage-" + appId, Target: "/storage"}},
-				PortBindings: nat.PortMap{
+				AutoRemove:  true,
+				Mounts:      []mount.Mount{{Type: mount.TypeVolume, Source: "localapps-storage-" + appId, Target: "/storage"}},
+				NetworkMode: "localapps-network",
+			}
+
+			if !constants.IsRunningInContainer() {
+				config.ExposedPorts = nat.PortSet{"80": struct{}{}}
+				hostConfig.PortBindings = nat.PortMap{
 					"80": {
 						{
 							HostIP:   "0.0.0.0",
 							HostPort: strconv.Itoa(freePort),
 						},
 					},
-				},
-				NetworkMode: "localapps-network",
+				}
 			}
 
 			appNameWithPart := appId + "/" + currentPartName
-
 			createdContainer, _ := cli.ContainerCreate(context.Background(), &config, &hostConfig, nil, nil, "")
+
+			if constants.IsRunningInContainer() {
+				containerInspect, _ := cli.ContainerInspect(context.Background(), createdContainer.ID)
+				containerAddress = strings.TrimPrefix(containerInspect.Name, "/")
+				freePort = 80
+			} else {
+				freePort, _ = utils.GetFreePort()
+				containerAddress = "localhost"
+			}
+
 			fmt.Println("[app:"+appNameWithPart+"]", "Got a http request while stopped - creating container")
 
 			if err := cli.ContainerStart(context.Background(), createdContainer.ID, container.StartOptions{}); err != nil {
@@ -126,15 +148,16 @@ func AppProxy(next http.Handler) http.Handler {
 		}
 
 		// Wait for the app to be ready
+		containerAccessPoint := fmt.Sprintf("http://%s:%d", containerAddress, freePort)
 		for {
-			_, err := http.Get(fmt.Sprintf("http://localhost:%d", freePort))
+			_, err := http.Get(containerAccessPoint)
 			if err == nil {
 				break
 			}
 			time.Sleep(500 * time.Millisecond)
 		}
 
-		appUrl, _ := url.Parse(fmt.Sprintf("http://localhost:%d", freePort))
+		appUrl, _ := url.Parse(containerAccessPoint)
 		httputil.NewSingleHostReverseProxy(appUrl).ServeHTTP(w, r)
 
 		next.ServeHTTP(w, r)

@@ -121,21 +121,29 @@ var upCmd = &cobra.Command{
 				"POSTGRES_USER=localapps",
 				fmt.Sprintf("POSTGRES_PASSWORD=%s", databasePassword),
 			},
-			ExposedPorts: nat.PortSet{"5432": struct{}{}},
 		}
 
 		hostConfig := container.HostConfig{
-			PortBindings: nat.PortMap{
+			Mounts:      []mount.Mount{{Type: mount.TypeVolume, Source: "localapps-database", Target: "/var/lib/postgresql/data"}},
+			AutoRemove:  true,
+			NetworkMode: "localapps-network",
+		}
+
+		databaseAddress := "localapps-database"
+
+		if !constants.IsRunningInContainer() {
+			config.ExposedPorts = nat.PortSet{"5432": struct{}{}}
+			hostConfig.PortBindings = nat.PortMap{
 				"5432": {
 					{
 						HostIP:   "0.0.0.0",
 						HostPort: strconv.Itoa(freePort),
 					},
 				},
-			},
-			Mounts:      []mount.Mount{{Type: mount.TypeVolume, Source: "localapps-database", Target: "/var/lib/postgresql/data"}},
-			AutoRemove:  true,
-			NetworkMode: "localapps-network",
+			}
+
+			fmt.Println("----- 🚨 Running on host 🚨 -----\nDatabase port is exposed to a random port on host.\nApp ports will also be exposed.\nIt is recommended to run on docker in production.\n----- 🚨 Running on host 🚨 -----")
+			databaseAddress = fmt.Sprintf("localhost:%d", freePort)
 		}
 
 		databaseContainer, err := cli.ContainerCreate(context.Background(), &config, &hostConfig, nil, nil, "localapps-database")
@@ -149,7 +157,7 @@ var upCmd = &cobra.Command{
 			return
 		}
 
-		os.Setenv("LOCALAPPS_DB", fmt.Sprintf("postgres://localapps:%s@localhost:%d/localapps?sslmode=disable", databasePassword, freePort))
+		os.Setenv("LOCALAPPS_DB", fmt.Sprintf("postgres://localapps:%s@%s/localapps?sslmode=disable", databasePassword, databaseAddress))
 
 		fmt.Println("Waiting for database client to connect")
 		for {
