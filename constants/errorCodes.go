@@ -13,4 +13,5 @@ var (
 	ErrorRead             = "READ_ERROR"
 	ErrorUninstall        = "UNINSTALL_ERROR"
 	ErrorFsCreateDir      = "MKDIR_ERROR"
+	ErrorInvalidIcon      = "INVALID_ICON"
 )
