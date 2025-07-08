@@ -26,6 +26,20 @@ Linux:
 
 ### Remote (VPS)
 
-1. Create `access-url.txt` file using `echo "http://domain.tld" > ~/.config/localapps/access-url.txt`
-2. Do `localapps up`
+1. Login to your vps
+2. Create data directory for localapps using:
+  ```bash
+  mkdir -p .config/localapps
+  ```
+
+3. Create `access-url.txt` file inside it using:
+  ```bash
+  echo "http://example.com:8080" > .config/localapps/access-url.txt
+  ```
+
+2. Start localapps using:
+  ```bash
+  docker run -d --name localapps-server -v /var/run/docker.sock:/var/run/docker.sock -v .config/localapps:/root/.config/localapps -p 8080:8080 ghcr.io/cyberl1/localapps
+  ```
+
 3. Go to the url you set to access localapps
