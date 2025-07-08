@@ -14,6 +14,7 @@ type App struct {
 	Name        string
 	Parts       []byte
 	Icon        string
+	AppID       string
 }
 
 type Config struct {

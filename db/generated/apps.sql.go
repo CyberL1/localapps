@@ -12,12 +12,12 @@ import (
 )
 
 const createApp = `-- name: CreateApp :one
-INSERT INTO apps (id, installed_at, name, parts, icon) VALUES ($1, $2, $3, $4, $5)
-RETURNING id, installed_at, name, parts, icon
+INSERT INTO apps (app_id, installed_at, name, parts, icon) VALUES ($1, $2, $3, $4, $5)
+RETURNING id, installed_at, name, parts, icon, app_id
 `
 
 type CreateAppParams struct {
-	ID          string
+	AppID       string
 	InstalledAt pgtype.Timestamp
 	Name        string
 	Parts       []byte
@@ -26,7 +26,7 @@ type CreateAppParams struct {
 
 func (q *Queries) CreateApp(ctx context.Context, arg CreateAppParams) (App, error) {
 	row := q.db.QueryRow(ctx, createApp,
-		arg.ID,
+		arg.AppID,
 		arg.InstalledAt,
 		arg.Name,
 		arg.Parts,
@@ -39,6 +39,7 @@ func (q *Queries) CreateApp(ctx context.Context, arg CreateAppParams) (App, erro
 		&i.Name,
 		&i.Parts,
 		&i.Icon,
+		&i.AppID,
 	)
 	return i, err
 }
@@ -52,12 +53,12 @@ func (q *Queries) DeleteApp(ctx context.Context, id string) error {
 	return err
 }
 
-const getApp = `-- name: GetApp :one
-SELECT id, installed_at, name, parts, icon FROM apps WHERE id = $1
+const getAppByAppId = `-- name: GetAppByAppId :one
+SELECT id, installed_at, name, parts, icon, app_id FROM apps WHERE app_id = $1
 `
 
-func (q *Queries) GetApp(ctx context.Context, id string) (App, error) {
-	row := q.db.QueryRow(ctx, getApp, id)
+func (q *Queries) GetAppByAppId(ctx context.Context, appID string) (App, error) {
+	row := q.db.QueryRow(ctx, getAppByAppId, appID)
 	var i App
 	err := row.Scan(
 		&i.ID,
@@ -65,12 +66,31 @@ func (q *Queries) GetApp(ctx context.Context, id string) (App, error) {
 		&i.Name,
 		&i.Parts,
 		&i.Icon,
+		&i.AppID,
+	)
+	return i, err
+}
+
+const getAppById = `-- name: GetAppById :one
+SELECT id, installed_at, name, parts, icon, app_id FROM apps WHERE id = $1
+`
+
+func (q *Queries) GetAppById(ctx context.Context, id string) (App, error) {
+	row := q.db.QueryRow(ctx, getAppById, id)
+	var i App
+	err := row.Scan(
+		&i.ID,
+		&i.InstalledAt,
+		&i.Name,
+		&i.Parts,
+		&i.Icon,
+		&i.AppID,
 	)
 	return i, err
 }
 
 const listApps = `-- name: ListApps :many
-SELECT id, installed_at, name, parts, icon FROM apps ORDER BY installed_at
+SELECT id, installed_at, name, parts, icon, app_id FROM apps ORDER BY installed_at
 `
 
 func (q *Queries) ListApps(ctx context.Context) ([]App, error) {
@@ -88,6 +108,7 @@ func (q *Queries) ListApps(ctx context.Context) ([]App, error) {
 			&i.Name,
 			&i.Parts,
 			&i.Icon,
+			&i.AppID,
 		); err != nil {
 			return nil, err
 		}
@@ -100,12 +121,12 @@ func (q *Queries) ListApps(ctx context.Context) ([]App, error) {
 }
 
 const updateApp = `-- name: UpdateApp :one
-UPDATE apps SET name = $2, parts = $3, icon = $4 WHERE id = $1
-RETURNING id, installed_at, name, parts, icon
+UPDATE apps SET name = $2, parts = $3, icon = $4 WHERE app_id = $1
+RETURNING id, installed_at, name, parts, icon, app_id
 `
 
 type UpdateAppParams struct {
-	ID    string
+	AppID string
 	Name  string
 	Parts []byte
 	Icon  string
@@ -113,7 +134,7 @@ type UpdateAppParams struct {
 
 func (q *Queries) UpdateApp(ctx context.Context, arg UpdateAppParams) (App, error) {
 	row := q.db.QueryRow(ctx, updateApp,
-		arg.ID,
+		arg.AppID,
 		arg.Name,
 		arg.Parts,
 		arg.Icon,
@@ -125,6 +146,7 @@ func (q *Queries) UpdateApp(ctx context.Context, arg UpdateAppParams) (App, erro
 		&i.Name,
 		&i.Parts,
 		&i.Icon,
+		&i.AppID,
 	)
 	return i, err
 }

@@ -13,12 +13,12 @@ import (
 func getApp(w http.ResponseWriter, r *http.Request) {
 	db, _ := dbClient.GetClient()
 
-	app, err := db.GetApp(context.Background(), r.PathValue("appId"))
+	app, err := db.GetAppByAppId(context.Background(), r.PathValue("appId"))
 	if err != nil {
 		response := types.ApiError{
 			Code:    constants.ErrorNotFound,
 			Message: fmt.Sprintf("App \"%s\" not found", r.PathValue("appId")),
-			Error: err,
+			Error:   err,
 		}
 
 		w.Header().Set("Content-Type", "application/json")
@@ -29,6 +29,7 @@ func getApp(w http.ResponseWriter, r *http.Request) {
 
 	response := types.ApiAppResponse{
 		Id:          app.ID,
+		AppId:       app.AppID,
 		Name:        app.Name,
 		Icon:        app.Icon,
 		InstalledAt: app.InstalledAt.Time.String(),

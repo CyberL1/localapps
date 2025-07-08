@@ -20,7 +20,7 @@ func uninstallApp(w http.ResponseWriter, r *http.Request) {
 	client, _ := dbClient.GetClient()
 	appId := r.PathValue("appId")
 
-	_, err := client.GetApp(context.Background(), appId)
+	_, err := client.GetAppById(context.Background(), appId)
 	if err != nil {
 		response := types.ApiError{
 			Code:    constants.ErrorNotFound,

@@ -101,9 +101,9 @@ func installApp(w http.ResponseWriter, r *http.Request) {
 	}
 
 	client, _ := dbClient.GetClient()
-	appWithTheSameId, _ := client.GetApp(context.Background(), appInfo.Id)
+	appWithTheSameId, _ := client.GetAppByAppId(context.Background(), appInfo.Id)
 
-	if r.FormValue("update") != "true" && appWithTheSameId.ID == appInfo.Id {
+	if r.FormValue("update") != "true" && appWithTheSameId.AppID == appInfo.Id {
 		response := types.ApiError{
 			Code:    constants.ErrorAppInstalled,
 			Message: "App already installed",
@@ -136,13 +136,13 @@ func installApp(w http.ResponseWriter, r *http.Request) {
 
 	if r.FormValue("update") == "true" {
 		_, err = client.UpdateApp(context.Background(), db.UpdateAppParams{
-			ID:    appInfo.Id,
+			AppID: appInfo.Id,
 			Name:  appInfo.Name,
 			Parts: partsJson,
 		})
 	} else {
 		_, err = client.CreateApp(context.Background(), db.CreateAppParams{
-			ID:          appInfo.Id,
+			AppID:       appInfo.Id,
 			InstalledAt: pgtype.Timestamp{Time: time.Now(), Valid: true},
 			Name:        appInfo.Name,
 			Parts:       partsJson,

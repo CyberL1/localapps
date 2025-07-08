@@ -10,7 +10,7 @@ import (
 
 func GetAppData(appId string) (*types.ApiAppResponse, error) {
 	client, _ := dbClient.GetClient()
-	app, err := client.GetApp(context.Background(), appId)
+	app, err := client.GetAppByAppId(context.Background(), appId)
 
 	if err != nil {
 		return nil, fmt.Errorf("app \"%s\" not found", appId)

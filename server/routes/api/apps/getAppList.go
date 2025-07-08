@@ -6,7 +6,6 @@ import (
 	"localapps/constants"
 	dbClient "localapps/db/client"
 	"localapps/types"
-	"localapps/utils"
 	"net/http"
 )
 
@@ -27,18 +26,12 @@ func getAppList(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var list []types.ApiAppResponse
-
 	for _, appData := range apps {
-		app, err := utils.GetAppData(appData.ID)
-
-		if err != nil {
-			continue
-		}
-
 		list = append(list, types.ApiAppResponse{
 			Id:          appData.ID,
-			Name:        app.Name,
-			Icon:        app.Icon,
+			AppId:       appData.AppID,
+			Name:        appData.Name,
+			Icon:        appData.Icon,
 			InstalledAt: appData.InstalledAt.Time.String(),
 			Parts: func() map[string]string {
 				var parts map[string]string
