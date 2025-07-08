@@ -3,15 +3,20 @@ package appsApi
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
+	"io/fs"
 	"localapps/constants"
 	dbClient "localapps/db/client"
 	db "localapps/db/generated"
 	"localapps/types"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 	"gopkg.in/yaml.v2"
 )
@@ -134,11 +139,57 @@ func installApp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if appInfo.Icon != "" {
+		appInfo.Icon = strings.ReplaceAll(uuid.NewString(), "-", "")
+
+		if _, err := os.Stat(constants.LocalappsAppIconsDir); errors.Is(err, fs.ErrNotExist) {
+			os.MkdirAll(constants.LocalappsAppIconsDir, 0755)
+		}
+
+		os.Create(filepath.Join(constants.LocalappsAppIconsDir, appInfo.Icon))
+
+		iconFile, _, err := r.FormFile("icon")
+		if err != nil {
+			response := types.ApiError{
+				Code:    constants.ErrorRead,
+				Message: "Error while reading app icon",
+				Error:   err,
+			}
+
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(response)
+			return
+		}
+		defer iconFile.Close()
+
+		iconData, err := io.ReadAll(iconFile)
+		if err != nil {
+			response := types.ApiError{
+				Code:    constants.ErrorRead,
+				Message: "Error while reading app icon",
+				Error:   err,
+			}
+
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(response)
+			return
+		}
+
+		os.WriteFile(filepath.Join(constants.LocalappsAppIconsDir, appInfo.Icon), iconData, 0644)
+	}
+
 	if r.FormValue("update") == "true" {
+		if appWithTheSameId.Icon != "" {
+			os.Remove(filepath.Join(constants.LocalappsAppIconsDir, appWithTheSameId.Icon))
+		}
+
 		_, err = client.UpdateApp(context.Background(), db.UpdateAppParams{
 			AppID: appInfo.Id,
 			Name:  appInfo.Name,
 			Parts: partsJson,
+			Icon:  appInfo.Icon,
 		})
 	} else {
 		_, err = client.CreateApp(context.Background(), db.CreateAppParams{
@@ -146,6 +197,7 @@ func installApp(w http.ResponseWriter, r *http.Request) {
 			InstalledAt: pgtype.Timestamp{Time: time.Now(), Valid: true},
 			Name:        appInfo.Name,
 			Parts:       partsJson,
+			Icon:        appInfo.Icon,
 		})
 	}
 

@@ -12,4 +12,5 @@ var (
 	ErrorParse            = "PARSE_ERROR"
 	ErrorRead             = "READ_ERROR"
 	ErrorUninstall        = "UNINSTALL_ERROR"
+	ErrorFsCreateDir      = "MKDIR_ERROR"
 )
