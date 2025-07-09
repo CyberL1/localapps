@@ -48,7 +48,7 @@ var upCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		// Check for all required resources
 		if _, err := os.Stat(constants.LocalappsDir); os.IsNotExist(err) {
-			if err := os.Mkdir(constants.LocalappsDir, os.ModePerm); err != nil {
+			if err := os.Mkdir(constants.LocalappsDir, 0755); err != nil {
 				fmt.Println("Failed to create ~/.config/localapps directory:", err)
 				return
 			}
