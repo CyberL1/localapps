@@ -163,30 +163,6 @@ func installApp(w http.ResponseWriter, r *http.Request) {
 		}
 		defer iconFile.Close()
 
-		header := make([]byte, 512)
-		if _, err := iconFile.Read(header); err != nil {
-			response := types.ApiError{
-				Code:    constants.ErrorAccessDenied,
-				Message: "Failed to read app icon file",
-				Error:   err,
-			}
-
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(response)
-			return
-		}
-
-		if http.DetectContentType(header) != "image/png" {
-			response := types.ApiError{
-				Code:    constants.ErrorInvalidIcon,
-				Message: "App icon must be a png file",
-			}
-
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(response)
-			return
-		}
-
 		iconData, err := io.ReadAll(iconFile)
 		if err != nil {
 			response := types.ApiError{
@@ -197,6 +173,17 @@ func installApp(w http.ResponseWriter, r *http.Request) {
 
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(response)
+			return
+		}
+
+		if http.DetectContentType(iconData[:512]) != "image/png" {
+			response := types.ApiError{
+				Code:    constants.ErrorInvalidIcon,
+				Message: "App icon must be a png file",
+			}
+
+			w.WriteHeader(http.StatusBadRequest)
 			json.NewEncoder(w).Encode(response)
 			return
 		}
