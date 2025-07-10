@@ -214,7 +214,7 @@ func installApp(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		response := types.ApiError{
-			Code:    constants.ErrorEncode,
+			Code:    constants.ErrorDb,
 			Message: "Error while creating DB record",
 			Error:   err,
 		}
