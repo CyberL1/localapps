@@ -21,5 +21,7 @@ func (h *Handler) RegisterRoutes() *http.ServeMux {
 	r.Handle("/apps/", http.StripPrefix("/apps", middlewares.ApiAuth(appsApi.NewHandler().RegisterRoutes())))
 	r.Handle("/icons/", http.StripPrefix("/icons", iconsApi.NewHandler().RegisterRoutes()))
 
+	r.HandleFunc("GET /link", Link)
+
 	return r
 }
