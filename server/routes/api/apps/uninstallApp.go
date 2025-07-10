@@ -8,6 +8,8 @@ import (
 	dbClient "localapps/db/client"
 	"localapps/types"
 	"net/http"
+	"os"
+	"path/filepath"
 
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
@@ -20,7 +22,7 @@ func uninstallApp(w http.ResponseWriter, r *http.Request) {
 	client, _ := dbClient.GetClient()
 	appId := r.PathValue("appId")
 
-	_, err := client.GetAppById(context.Background(), appId)
+	appData, err := client.GetAppById(context.Background(), appId)
 	if err != nil {
 		response := types.ApiError{
 			Code:    constants.ErrorNotFound,
@@ -35,7 +37,7 @@ func uninstallApp(w http.ResponseWriter, r *http.Request) {
 	}
 
 	cli, _ := dockerClient.NewClientWithOpts(dockerClient.FromEnv)
-	
+
 	_, err = cli.Ping(context.Background())
 	if err != nil {
 		response := types.ApiError{
@@ -105,6 +107,10 @@ func uninstallApp(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 		}
+	}
+
+	if appData.Icon != "" {
+		os.Remove(filepath.Join(constants.LocalappsAppIconsDir, appData.Icon))
 	}
 
 	err = client.DeleteApp(context.Background(), appId)
