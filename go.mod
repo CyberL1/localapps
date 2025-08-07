@@ -51,7 +51,7 @@ require (
 )
 
 require (
-	github.com/docker/docker v28.3.2+incompatible
+	github.com/docker/docker v28.3.3+incompatible
 	github.com/go-yaml/yaml v2.1.0+incompatible
 	github.com/golang-migrate/migrate/v4 v4.18.3
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
