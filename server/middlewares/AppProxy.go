@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"localapps/constants"
 	"localapps/utils"
+	"localapps/web"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -21,26 +23,23 @@ import (
 
 func AppProxy(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var appId string
 		var appEnvironmentVars []string
 
-		if len(strings.Split(r.Host, ".")) == len(strings.Split(utils.ServerConfig.AccessUrl, "."))+1 {
-			appId = strings.Split(r.Host, ".")[0]
-		} else {
-			appId = "home"
-
-			var origin = "localhost"
-			if constants.IsRunningInContainer() {
-				origin = "localapps-server"
-			}
-
-			appEnvironmentVars = append(appEnvironmentVars, "ORIGIN=http://"+origin+":8080", "LOCALAPPS_API_KEY="+utils.ServerConfig.ApiKey)
-
+		if r.Host == strings.Split(utils.ServerConfig.AccessUrl, "://")[1] {
 			if strings.HasPrefix(r.URL.Path, "/api") {
 				next.ServeHTTP(w, r)
-				return
+			} else {
+				if os.Getenv("DEV_MODE") == "true" {
+					frontendUrl, _ := url.Parse("http://localhost:5173")
+					httputil.NewSingleHostReverseProxy(frontendUrl).ServeHTTP(w, r)
+				} else {
+					http.FileServerFS(web.BuildDirFS).ServeHTTP(w, r)
+				}
 			}
+			return
 		}
+
+		appId := strings.Split(r.Host, ".")[0]
 
 		appData, err := utils.GetAppData(appId)
 		if err != nil {
@@ -123,20 +122,22 @@ func AppProxy(next http.Handler) http.Handler {
 			appNameWithPart := appId + "/" + currentPartName
 			createdContainer, _ := cli.ContainerCreate(context.Background(), &config, &hostConfig, nil, nil, "")
 
-			if constants.IsRunningInContainer() {
-				containerInspect, _ := cli.ContainerInspect(context.Background(), createdContainer.ID)
-				containerAddress = strings.TrimPrefix(containerInspect.Name, "/")
-				freePort = 80
-			} else {
-				freePort, _ = utils.GetFreePort()
-				containerAddress = "localhost"
-			}
-
 			fmt.Println("[app:"+appNameWithPart+"]", "Got a http request while stopped - creating container")
 
 			if err := cli.ContainerStart(context.Background(), createdContainer.ID, container.StartOptions{}); err != nil {
 				w.Write([]byte(fmt.Sprintf("Failed to start app \"%s\": %s", appId, err)))
 				return
+			}
+
+			if constants.IsRunningInContainer() {
+				containerInspect, _ := cli.ContainerInspect(context.Background(), createdContainer.ID)
+				containerAddress = strings.TrimPrefix(containerInspect.Name, "/")
+				freePort = 80
+			} else {
+				containerInspect, _ := cli.ContainerInspect(context.Background(), createdContainer.ID)
+				containerPort := containerInspect.NetworkSettings.Ports["80/tcp"][0].HostPort
+				containerAddress = "localhost"
+				freePort, _ = strconv.Atoi(containerPort)
 			}
 
 			go func() {
