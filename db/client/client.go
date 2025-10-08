@@ -1,22 +1,24 @@
 package dbClient
 
 import (
-	"context"
+	"database/sql"
 	"fmt"
+	"localapps/constants"
 	db "localapps/db/generated"
 	"localapps/resources"
-	"os"
+	"path/filepath"
 
-	"github.com/jackc/pgx/v5"
+	_ "modernc.org/sqlite"
+
 	"github.com/pressly/goose/v3"
 )
 
 func Migrate() {
-	if err := goose.SetDialect("postgres"); err != nil {
+	if err := goose.SetDialect("sqlite"); err != nil {
 		fmt.Println(err)
 	}
 
-	sql, err := goose.OpenDBWithDriver("pgx", os.Getenv("LOCALAPPS_DB"))
+	sql, err := goose.OpenDBWithDriver("sqlite", filepath.Join(constants.LocalappsDir, "localapps.db"))
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -29,7 +31,7 @@ func Migrate() {
 }
 
 func GetClient() (*db.Queries, error) {
-	conn, err := pgx.Connect(context.Background(), os.Getenv("LOCALAPPS_DB"))
+	conn, err := sql.Open("sqlite", filepath.Join(constants.LocalappsDir, "localapps.db"))
 	if err != nil {
 		return nil, err
 	}

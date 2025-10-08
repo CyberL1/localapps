@@ -9,6 +9,8 @@ import (
 	"localapps/types"
 	"net/http"
 
+	"strconv"
+
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/image"
@@ -20,7 +22,21 @@ func uninstallApp(w http.ResponseWriter, r *http.Request) {
 	client, _ := dbClient.GetClient()
 	appId := r.PathValue("appId")
 
-	_, err := client.GetAppById(context.Background(), appId)
+	appIdInt64, err := strconv.ParseInt(appId, 10, 64)
+	if err != nil {
+		response := types.ApiError{
+			Code:    constants.ErrorParse,
+			Message: fmt.Sprintf("Could not parse app ID \"%s\"", appId),
+			Error:   err,
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	_, err = client.GetAppById(context.Background(), appIdInt64)
 	if err != nil {
 		response := types.ApiError{
 			Code:    constants.ErrorNotFound,
@@ -35,7 +51,7 @@ func uninstallApp(w http.ResponseWriter, r *http.Request) {
 	}
 
 	cli, _ := dockerClient.NewClientWithOpts(dockerClient.FromEnv)
-	
+
 	_, err = cli.Ping(context.Background())
 	if err != nil {
 		response := types.ApiError{
@@ -107,7 +123,7 @@ func uninstallApp(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	err = client.DeleteApp(context.Background(), appId)
+	err = client.DeleteApp(context.Background(), appIdInt64)
 	if err != nil {
 		response := types.ApiError{
 			Code:    constants.ErrorDb,

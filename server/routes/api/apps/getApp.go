@@ -32,10 +32,10 @@ func getApp(w http.ResponseWriter, r *http.Request) {
 		AppId:       app.AppID,
 		Name:        app.Name,
 		Icon:        app.Icon,
-		InstalledAt: app.InstalledAt.Time.String(),
+		InstalledAt: app.InstalledAt.String(),
 		Parts: func() map[string]string {
 			var parts map[string]string
-			if err := json.Unmarshal(app.Parts, &parts); err != nil {
+			if err := json.Unmarshal([]byte(app.Parts), &parts); err != nil {
 				parts = make(map[string]string) // default to empty map on error
 			}
 			return parts

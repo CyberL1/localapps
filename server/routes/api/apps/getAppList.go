@@ -32,10 +32,10 @@ func getAppList(w http.ResponseWriter, r *http.Request) {
 			AppId:       appData.AppID,
 			Name:        appData.Name,
 			Icon:        appData.Icon,
-			InstalledAt: appData.InstalledAt.Time.String(),
+			InstalledAt: appData.InstalledAt.String(),
 			Parts: func() map[string]string {
 				var parts map[string]string
-				if err := json.Unmarshal(appData.Parts, &parts); err != nil {
+				if err := json.Unmarshal([]byte(appData.Parts), &parts); err != nil {
 					parts = make(map[string]string) // default to empty map on error
 				}
 				return parts

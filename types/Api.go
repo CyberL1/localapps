@@ -7,7 +7,7 @@ type ApiError struct {
 }
 
 type ApiAppResponse struct {
-	Id          string            `json:"id"`
+	Id          int64             `json:"id"`
 	AppId       string            `json:"appId"`
 	Name        string            `json:"name"`
 	Icon        string            `json:"icon"`

@@ -17,7 +17,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgtype"
 	"gopkg.in/yaml.v2"
 )
 
@@ -199,15 +198,15 @@ func installApp(w http.ResponseWriter, r *http.Request) {
 		_, err = client.UpdateApp(context.Background(), db.UpdateAppParams{
 			AppID: appInfo.Id,
 			Name:  appInfo.Name,
-			Parts: partsJson,
+			Parts: string(partsJson),
 			Icon:  appInfo.Icon,
 		})
 	} else {
 		_, err = client.CreateApp(context.Background(), db.CreateAppParams{
 			AppID:       appInfo.Id,
-			InstalledAt: pgtype.Timestamp{Time: time.Now(), Valid: true},
+			InstalledAt: time.Now(),
 			Name:        appInfo.Name,
-			Parts:       partsJson,
+			Parts:       string(partsJson),
 			Icon:        appInfo.Icon,
 		})
 	}

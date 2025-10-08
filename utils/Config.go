@@ -2,6 +2,7 @@ package utils
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"localapps/constants"
@@ -12,8 +13,6 @@ import (
 	db "localapps/db/generated"
 	"localapps/types"
 	"reflect"
-
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 var ServerConfig types.ServerConfig
@@ -75,7 +74,7 @@ func validateServerConfig() error {
 		field, _ := reflect.TypeOf(types.ServerConfig{}).FieldByName(k)
 		defaultValue := field.Tag.Get("default")
 
-		client.SetConfigKey(context.Background(), db.SetConfigKeyParams{Key: k, Value: pgtype.Text{String: defaultValue, Valid: true}})
+		client.SetConfigKey(context.Background(), db.SetConfigKeyParams{Key: k, Value: sql.NullString{String: defaultValue, Valid: true}})
 	}
 	return nil
 }
