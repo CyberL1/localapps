@@ -2,9 +2,9 @@
 SELECT * FROM config;
 
 -- name: SetConfigKey :one
-INSERT INTO config (key, value) VALUES ($1, $2)
+INSERT INTO config (key, value) VALUES (?, ?)
 RETURNING *;
 
 -- name: UpdateConfigKey :one
-UPDATE config SET value = $2 WHERE key = $1
+UPDATE config SET value = ? WHERE key = ?
 RETURNING *;
