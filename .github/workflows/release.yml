@@ -38,14 +38,12 @@ jobs:
         run: |
           export GOOS=${{ matrix.os }}
           export GOARCH=${{ matrix.arch }}
-          go build -ldflags "-s -w -X localapps/constants.Version=${{ env.RELEASE_VERSION }}"
-      - name: Pack binary
-        run: zip localapps-${{ matrix.os }}-${{ matrix.arch }}.zip localapps${{ matrix.os == 'windows' && '.exe' || '' }}
+          go build -ldflags "-s -w -X localapps/constants.Version=${{ env.RELEASE_VERSION }}" -o localapps-${{ matrix.os }}-${{ matrix.arch }}${{ matrix.os == 'windows' && '.exe' || '' }}
       - name: Create release
         uses: ncipollo/release-action@v1.15.0
         with:
           tag: ${{ env.RELEASE_VERSION }}
-          artifacts: localapps-${{ matrix.os }}-${{ matrix.arch }}.zip
+          artifacts: localapps-${{ matrix.os }}-${{ matrix.arch }}${{ matrix.os == 'windows' && '.exe' || '' }}
           allowUpdates: true
   build-and-push-docker-image:
     name: Build and push docker image
@@ -53,7 +51,6 @@ jobs:
     permissions:
       contents: read
       packages: write
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
