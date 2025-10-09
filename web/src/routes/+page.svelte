@@ -46,6 +46,26 @@
         menu.close();
       },
     },
+    {
+      title: "Uninstall",
+      onclick: async () => {
+        if (confirm("Are you sure?")) {
+          const req = await fetch(`/api/apps/${menuData.id.toString()}`, {
+            method: "DELETE",
+            headers: { Authorization: page.data.apiKey },
+          });
+          if (req.ok) {
+            const appElement = document.getElementById(menuData.id.toString());
+            if (appElement) {
+              appElement.remove();
+            }
+          } else {
+            alert("Failed to uninstall the app. Please try again.");
+          }
+        }
+        menu.close();
+      },
+    },
   ]}
 />
 
