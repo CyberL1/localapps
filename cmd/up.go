@@ -47,6 +47,10 @@ var upCmd = &cobra.Command{
 			}
 		}
 
+		if !constants.IsRunningInContainer() {
+			fmt.Println("----- 🚨 Running on host 🚨 -----\nApp ports will be exposed to a random port on host.\nIt is recommended to run on docker in production.\n----- 🚨 Running on host 🚨 -----")
+		}
+
 		cli, _ := client.NewClientWithOpts(client.FromEnv)
 
 		_, err := cli.Ping(context.Background())
@@ -65,10 +69,6 @@ var upCmd = &cobra.Command{
 
 		cmd.Println("Creating localapps network")
 		cli.NetworkCreate(context.Background(), "localapps-network", network.CreateOptions{})
-
-		if !constants.IsRunningInContainer() {
-			fmt.Println("----- 🚨 Running on host 🚨 -----\nApp ports will be exposed to a random port on host.\nIt is recommended to run on docker in production.\n----- 🚨 Running on host 🚨 -----")
-		}
 
 		fmt.Println("Running database migrations")
 		dbClient.Migrate()
