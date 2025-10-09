@@ -67,7 +67,7 @@ var upCmd = &cobra.Command{
 		cli.NetworkCreate(context.Background(), "localapps-network", network.CreateOptions{})
 
 		if !constants.IsRunningInContainer() {
-			fmt.Println("----- 🚨 Running on host 🚨 -----\nDatabase port is exposed to a random port on host.\nApp ports will also be exposed.\nIt is recommended to run on docker in production.\n----- 🚨 Running on host 🚨 -----")
+			fmt.Println("----- 🚨 Running on host 🚨 -----\nApp ports will be exposed to a random port on host.\nIt is recommended to run on docker in production.\n----- 🚨 Running on host 🚨 -----")
 		}
 
 		fmt.Println("Running database migrations")
