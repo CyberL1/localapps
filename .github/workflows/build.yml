@@ -3,9 +3,13 @@ name: Build Go
 on:
   push:
     branches: [ "main" ]
+    paths:
+      - '**/*.go'
+      - 'web/**'
+      - 'go.mod'
+      - 'go.sum'
 
 jobs:
-
   build:
     runs-on: ubuntu-latest
     steps:
