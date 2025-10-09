@@ -67,8 +67,10 @@ var upCmd = &cobra.Command{
 			}
 		}
 
-		cmd.Println("Creating localapps network")
-		cli.NetworkCreate(context.Background(), "localapps-network", network.CreateOptions{})
+		if networks, _ := cli.NetworkList(context.Background(), network.ListOptions{Filters: filters.NewArgs(filters.Arg("name", "localapps-network"))}); len(networks) == 0 {
+			cmd.Println("Creating localapps network")
+			cli.NetworkCreate(context.Background(), "localapps-network", network.CreateOptions{})
+		}
 
 		fmt.Println("Running database migrations")
 		dbClient.Migrate()
