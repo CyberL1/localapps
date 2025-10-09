@@ -21,12 +21,11 @@
             +
           </button>
         </div>
-        <a
-          href={`//${app.name}.${location.host}`}
-          target="_blank"
-        >
+        <a href={`//${app.name}.${page.data.domain}`} target="_blank">
           <img
-            src={app.icon ? `/api/icons/apps/${app.icon}` : "https://placehold.co/60"}
+            src={app.icon
+              ? `/api/icons/apps/${app.icon}`
+              : "https://placehold.co/60"}
             alt="An icon"
           />
           <span>{app.name}</span>
@@ -43,7 +42,7 @@
     {
       title: "Open",
       onclick: () => {
-        window.open(`//${menuData.name}.${location.host}`);
+        window.open(`//${menuData.name}.${page.data.domain}`);
         menu.close();
       },
     },
