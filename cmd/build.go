@@ -18,7 +18,7 @@ func init() {
 
 var buildCmd = &cobra.Command{
 	Use:   "build",
-	Short: "Build localapp",
+	Short: "Build app",
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
 		currentDir, _ := os.Getwd()
